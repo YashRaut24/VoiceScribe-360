@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Mic, Mail, Lock, ArrowLeft, Eye, EyeOff, Stethoscope, User } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import './Login.css';
-// import axios from 'axios';
 
 const Login = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [userType, setUserType] = useState('doctor');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -18,12 +23,53 @@ const Login = () => {
       ...formData,
       [e.target.name]: value
     });
+    setError('');
   };
 
-  const handleSubmit = () => {
-    console.log('Login data:', { ...formData, userType });
-    
-    // Add your login logic here
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.email || !formData.password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      await login(formData.email, formData.password, userType);
+      navigate(userType === 'doctor' ? '/doctor-dashboard' : '/patient-dashboard');
+    } catch (error) {
+      setError(error.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async (demoUserType) => {
+    const demoCredentials = {
+      doctor: { email: 'demo@doctor.com', password: 'demo123' },
+      patient: { email: 'demo@patient.com', password: 'demo123' }
+    };
+
+    setUserType(demoUserType);
+    setFormData({
+      email: demoCredentials[demoUserType].email,
+      password: demoCredentials[demoUserType].password,
+      rememberMe: false
+    });
+
+    setLoading(true);
+    setError('');
+
+    try {
+      await login(demoCredentials[demoUserType].email, demoCredentials[demoUserType].password, demoUserType);
+      navigate(demoUserType === 'doctor' ? '/doctor-dashboard' : '/patient-dashboard');
+    } catch (error) {
+      setError(error.message || 'Demo login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -160,9 +206,30 @@ const Login = () => {
               <a href="#" className="forgot-link">Forgot password?</a>
             </div>
 
+            {error && (
+              <div style={{
+                backgroundColor: '#fee2e2',
+                color: '#dc2626',
+                padding: '12px',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                fontSize: '14px'
+              }}>
+                {error}
+              </div>
+            )}
+
             {/* Submit Button */}
-            <button onClick={handleSubmit} className="submit-btn">
-              Sign In
+            <button 
+              onClick={handleSubmit} 
+              className="submit-btn"
+              disabled={loading}
+              style={{
+                opacity: loading ? 0.7 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {loading ? 'Signing In...' : 'Sign In'}
             </button>
 
             {/* Divider */}
@@ -199,7 +266,42 @@ const Login = () => {
             <a href="/signup">Sign Up</a>
           </p>
 
-    
+          {/* Demo Account Info */}
+          <div className="demo-info">
+            <p>Demo Accounts</p>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+              <button 
+                onClick={() => handleDemoLogin('doctor')}
+                disabled={loading}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                Demo Doctor
+              </button>
+              <button 
+                onClick={() => handleDemoLogin('patient')}
+                disabled={loading}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                Demo Patient
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

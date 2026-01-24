@@ -1,23 +1,26 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Mic, Mail, Lock, User, Stethoscope, Building2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import './SignUp.css';
 
 const SignUp = () => {
+  const navigate = useNavigate();
+  const { register } = useAuth();
   const [userType, setUserType] = useState('doctor');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isPatient, setIsPatient] = useState(false);
-
   const [formData, setFormData] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
+    phone: '',
     licenseNumber: '',
-    hospitalName: '',
     specialization: '',
-    phoneNumber: ''
+    dateOfBirth: ''
   });
 
   const handleChange = (e) => {
@@ -25,85 +28,66 @@ const SignUp = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+    setError('');
   };
 
-const handleSubmit = async () => {
-  setError('');
-
-  if (!formData.fullName || !formData.email || !formData.password) {
-    setError('Please fill all required fields');
-    return;
-  }
-
-  if (formData.password !== formData.confirmPassword) {
-    setError('Passwords do not match');
-    return;
-  }
-
-  if (userType === 'doctor') {
-    if (!formData.licenseNumber || !formData.specialization) {
-      setError('Doctor details are required');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+      setError('Please fill in all required fields');
       return;
     }
-  }
 
-  setLoading(true);
-
-  try {
-    const nameParts = formData.fullName.trim().split(' ');
-    const firstName = nameParts[0];
-    const lastName = nameParts.slice(1).join(' ') || 'NA';
-
-    const payload = {
-      email: formData.email,
-      password: formData.password,
-      userType,
-      firstName,
-      lastName,
-      phone: formData.phoneNumber
-    };
-
-    if (userType === 'doctor') {
-      payload.specialization = formData.specialization;
-      payload.licenseNumber = formData.licenseNumber;
-    }
-    if(userType === 'patient'){
-      const res = await fetch('http://localhost:3000/api/auth/registerPatient', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-    }else{
-        const res = await fetch('http://localhost:3000/api/auth/register', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-        });
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
     }
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || 'Signup failed');
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
     }
 
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    if (userType === 'doctor' && (!formData.licenseNumber || !formData.specialization)) {
+      setError('License number and specialization are required for doctors');
+      return;
+    }
 
-    console.log('Signup success:', data);
+    if (userType === 'patient' && !formData.dateOfBirth) {
+      setError('Date of birth is required for patients');
+      return;
+    }
 
-    window.location.href = '/dashboard';
+    setLoading(true);
+    setError('');
 
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      const userData = {
+        email: formData.email,
+        password: formData.password,
+        userType,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone
+      };
+
+      if (userType === 'doctor') {
+        userData.specialization = formData.specialization;
+        userData.licenseNumber = formData.licenseNumber;
+      } else {
+        userData.dateOfBirth = formData.dateOfBirth;
+      }
+
+      await register(userData);
+      navigate(userType === 'doctor' ? '/doctor-dashboard' : '/patient-dashboard');
+    } catch (error) {
+      setError(error.message || 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="signup-page">
@@ -198,25 +182,56 @@ const handleSubmit = async () => {
           </div>
 
           <div className="signup-form">
-            {/* Full Name */}
+            {error && (
+              <div style={{
+                backgroundColor: '#fee2e2',
+                color: '#dc2626',
+                padding: '12px',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                fontSize: '14px'
+              }}>
+                {error}
+              </div>
+            )}
+
+            {/* First Name */}
             <div className="signup-form-group">
-              <label className="signup-label">Full Name</label>
+              <label className="signup-label">First Name *</label>
               <div className="signup-input-wrapper">
                 <User className="signup-input-icon" />
                 <input
                   type="text"
-                  name="fullName"
-                  value={formData.fullName}
+                  name="firstName"
+                  value={formData.firstName}
                   onChange={handleChange}
                   className="signup-input with-icon"
-                  placeholder="Dr. John Doe"
+                  placeholder="John"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Last Name */}
+            <div className="signup-form-group">
+              <label className="signup-label">Last Name *</label>
+              <div className="signup-input-wrapper">
+                <User className="signup-input-icon" />
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className="signup-input with-icon"
+                  placeholder="Doe"
+                  required
                 />
               </div>
             </div>
 
             {/* Email */}
             <div className="signup-form-group">
-              <label className="signup-label">Email Address</label>
+              <label className="signup-label">Email Address *</label>
               <div className="signup-input-wrapper">
                 <Mail className="signup-input-icon" />
                 <input
@@ -226,6 +241,7 @@ const handleSubmit = async () => {
                   onChange={handleChange}
                   className="signup-input with-icon"
                   placeholder="doctor@hospital.com"
+                  required
                 />
               </div>
             </div>
@@ -234,7 +250,7 @@ const handleSubmit = async () => {
             {userType === 'doctor' && (
               <>
                 <div className="signup-form-group">
-                  <label className="signup-label">Medical License Number</label>
+                  <label className="signup-label">Medical License Number *</label>
                   <input
                     type="text"
                     name="licenseNumber"
@@ -242,31 +258,18 @@ const handleSubmit = async () => {
                     onChange={handleChange}
                     className="signup-input"
                     placeholder="MED123456"
+                    required
                   />
                 </div>
 
                 <div className="signup-form-group">
-                  <label className="signup-label">Hospital/Clinic Name</label>
-                  <div className="signup-input-wrapper">
-                    <Building2 className="signup-input-icon" />
-                    <input
-                      type="text"
-                      name="hospitalName"
-                      value={formData.hospitalName}
-                      onChange={handleChange}
-                      className="signup-input with-icon"
-                      placeholder="City General Hospital"
-                    />
-                  </div>
-                </div>
-
-                <div className="signup-form-group">
-                  <label className="signup-label">Specialization</label>
+                  <label className="signup-label">Specialization *</label>
                   <select
                     name="specialization"
                     value={formData.specialization}
                     onChange={handleChange}
                     className="signup-select"
+                    required
                   >
                     <option value="">Select Specialization</option>
                     <option value="general">General Practice</option>
@@ -281,13 +284,28 @@ const handleSubmit = async () => {
               </>
             )}
 
+            {/* Patient-specific fields */}
+            {userType === 'patient' && (
+              <div className="signup-form-group">
+                <label className="signup-label">Date of Birth *</label>
+                <input
+                  type="date"
+                  name="dateOfBirth"
+                  value={formData.dateOfBirth}
+                  onChange={handleChange}
+                  className="signup-input"
+                  required
+                />
+              </div>
+            )}
+
             {/* Phone Number */}
             <div className="signup-form-group">
               <label className="signup-label">Phone Number</label>
               <input
                 type="tel"
-                name="phoneNumber"
-                value={formData.phoneNumber}
+                name="phone"
+                value={formData.phone}
                 onChange={handleChange}
                 className="signup-input"
                 placeholder="+91 98765 43210"
@@ -296,7 +314,7 @@ const handleSubmit = async () => {
 
             {/* Password */}
             <div className="signup-form-group">
-              <label className="signup-label">Password</label>
+              <label className="signup-label">Password *</label>
               <div className="signup-input-wrapper">
                 <Lock className="signup-input-icon" />
                 <input
@@ -306,6 +324,8 @@ const handleSubmit = async () => {
                   onChange={handleChange}
                   className="signup-input with-icon with-toggle"
                   placeholder="••••••••"
+                  required
+                  minLength="6"
                 />
                 <button
                   type="button"
@@ -319,7 +339,7 @@ const handleSubmit = async () => {
 
             {/* Confirm Password */}
             <div className="signup-form-group">
-              <label className="signup-label">Confirm Password</label>
+              <label className="signup-label">Confirm Password *</label>
               <div className="signup-input-wrapper">
                 <Lock className="signup-input-icon" />
                 <input
@@ -329,13 +349,14 @@ const handleSubmit = async () => {
                   onChange={handleChange}
                   className="signup-input with-icon"
                   placeholder="••••••••"
+                  required
                 />
               </div>
             </div>
 
             {/* Terms */}
             <div className="signup-terms">
-              <input type="checkbox" id="terms" />
+              <input type="checkbox" id="terms" required />
               <label htmlFor="terms">
                 I agree to the{' '}
                 <a href="#">Terms of Service</a>{' '}
@@ -343,18 +364,19 @@ const handleSubmit = async () => {
                 <a href="#">Privacy Policy</a>
               </label>
             </div>
-            {error && <p className="signup-error">{error}</p>}
-
 
             {/* Submit Button */}
-           <button
-            onClick={handleSubmit}
-            className="signup-submit-btn"
-            disabled={loading}
+            <button 
+              onClick={handleSubmit} 
+              className="signup-submit-btn"
+              disabled={loading}
+              style={{
+                opacity: loading ? 0.7 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer'
+              }}
             >
-            {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
-
           </div>
 
           {/* Login Link */}
