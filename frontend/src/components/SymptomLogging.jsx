@@ -11,7 +11,19 @@ const SymptomLogging = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [loggedSymptoms, setLoggedSymptoms] = useState([]);
   const [careSessions, setCareSessions] = useState(['Care Session 001']);
-const [fetchedSymptoms, setFetchedSymptoms] = useState([]);
+  const [fetchedSymptoms, setFetchedSymptoms] = useState([]);
+
+  useEffect(() => {
+    const fetchSymptoms = async () => {
+      try {
+        const symptoms = await api.getSymptoms();
+        setFetchedSymptoms(symptoms);
+      } catch (error) {
+        console.error('Error fetching symptoms:', error);
+      }
+    };
+    fetchSymptoms();
+  }, []);
 
   const handleTypeClick = () => {
     setInputMode('type');
