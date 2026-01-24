@@ -1,9 +1,138 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { User, ArrowRight, FileText, Stethoscope, Activity, Shield, Lock, Heart } from 'lucide-react';
+import './PatientDashboard.css';
 
 const PatientDashboard = () => {
+  const navigate = useNavigate();
+
+  const handleStartLogging = () => {
+    navigate('/patient/log-symptoms');
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-3xl font-bold">Patient Dashboard</h1>
+    <div className="patient-dashboard">
+      {/* Top Navigation Bar */}
+      <nav className="dashboard-navbar">
+        <div className="dashboard-navbar-content">
+          <div className="dashboard-logo">
+            <span>VoiceScribe-360</span>
+          </div>
+          <div className="dashboard-profile">
+            <User />
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <div className="dashboard-container">
+        {/* Welcome Section */}
+        <section className="welcome-section">
+          <h1 className="welcome-title">Feeling unusual lately?</h1>
+          <p className="welcome-subtitle">
+            Don't let symptoms fade before your doctor's visit. Capture your health journey naturally.
+          </p>
+          <button className="btn-start-logging" onClick={handleStartLogging}>
+            Start Logging Symptoms
+            <ArrowRight />
+          </button>
+        </section>
+
+        {/* Care Journey Section */}
+        <section className="care-journey-section">
+          <h2 className="section-heading">Your Complete Care Journey</h2>
+          <div className="care-journey-grid">
+            <div className="journey-card">
+              <div className="journey-icon">
+                <FileText />
+              </div>
+              <h3 className="journey-title">Pre-Consultation</h3>
+              <h4 className="journey-subtitle">Capture</h4>
+              <p className="journey-description">
+                Log symptoms naturally via voice or text as they happen.
+              </p>
+              <button className="journey-action" onClick={handleStartLogging}>
+                Begin Symptom Logging
+              </button>
+            </div>
+
+            <div className="journey-card">
+              <div className="journey-icon">
+                <Stethoscope />
+              </div>
+              <h3 className="journey-title">Consultation</h3>
+              <h4 className="journey-subtitle">Documentation</h4>
+              <p className="journey-description">
+                Let your doctor focus on you while the system structures the conversation.
+              </p>
+              <button className="journey-action disabled">
+                Start Consultation Mode
+              </button>
+            </div>
+
+            <div className="journey-card">
+              <div className="journey-icon">
+                <Activity />
+              </div>
+              <h3 className="journey-title">Post-Consultation</h3>
+              <h4 className="journey-subtitle">Intelligence</h4>
+              <p className="journey-description">
+                Passively analyze anonymized data. Contribute to early health awareness.
+              </p>
+              <button className="journey-action disabled">
+                View Care Summary
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* How VoiceScribe Works */}
+        <section className="info-section">
+          <h2 className="section-heading">How VoiceScribe-360 Works</h2>
+          <div className="info-content">
+            <div className="info-item">
+              <h3>Privacy & Trust Security</h3>
+              <p>
+                Your health data is anonymized and encrypted. We never share identifiable information 
+                without your explicit consent.
+              </p>
+            </div>
+            <div className="info-item">
+              <h3>Why VoiceScribe-360 Exists</h3>
+              <p>
+                We believe in empowering patients and doctors. By capturing symptoms naturally and 
+                documenting visits seamlessly, we enable better care and early detection.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Privacy & Trust Section */}
+        <section className="trust-section">
+          <div className="trust-grid">
+            <div className="trust-card">
+              <Shield />
+              <h4>Privacy First</h4>
+              <p>End-to-end encryption</p>
+            </div>
+            <div className="trust-card">
+              <Lock />
+              <h4>Your Control</h4>
+              <p>You decide what to share</p>
+            </div>
+            <div className="trust-card">
+              <Heart />
+              <h4>Human-Centered</h4>
+              <p>Built for real people</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* Footer */}
+      <footer className="dashboard-footer">
+        <p>&copy; 2026 VoiceScribe-360. Built for GDG AI Hackathon 2.0.</p>
+      </footer>
     </div>
   );
 };
