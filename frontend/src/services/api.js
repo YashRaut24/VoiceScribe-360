@@ -100,6 +100,10 @@ class ApiService {
   }
 
   // Symptoms
+  async getSymptoms() {
+    return this.request('/symptoms');
+  }
+
   async createSymptom(symptomsText) {
     return this.request('/symptoms', {
       method: 'POST',

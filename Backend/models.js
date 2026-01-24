@@ -53,10 +53,34 @@ const symptomLogSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+const SymptomLogSchema1 = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+
+  symptomsText: {
+    type: String,
+    required: true
+  },
+
+  structuredData: {
+    type: Object,
+    default: null
+  },
+
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 module.exports = {
   User: mongoose.model('User', userSchema),
   Appointment: mongoose.model('Appointment', appointmentSchema),
   MedicalRecord: mongoose.model('MedicalRecord', medicalRecordSchema),
   LoginSession: mongoose.model('LoginSession', loginSessionSchema),
-  SymptomLog: mongoose.model('SymptomLog', symptomLogSchema)
+  SymptomLog: mongoose.model('SymptomLog', symptomLogSchema),
+  SymptomLogDoctor: mongoose.model('SymptomLogDoctor', SymptomLogSchema1),
 };

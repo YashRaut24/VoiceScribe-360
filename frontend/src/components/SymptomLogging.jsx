@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, ArrowLeft } from 'lucide-react';
 import api from '../services/api';
 import './SymptomLogging.css';
@@ -11,6 +11,7 @@ const SymptomLogging = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [loggedSymptoms, setLoggedSymptoms] = useState([]);
   const [careSessions, setCareSessions] = useState(['Care Session 001']);
+const [fetchedSymptoms, setFetchedSymptoms] = useState([]);
 
   const handleTypeClick = () => {
     setInputMode('type');
@@ -135,6 +136,56 @@ const SymptomLogging = () => {
             </div>
 
             <p className="instruction-text">About your symptoms</p>
+
+            {fetchedSymptoms.length > 0 && (
+              <div className="fetched-symptoms-log">
+                {fetchedSymptoms.map((symptom) => (
+                  <div key={symptom._id} className="symptom-card">
+                    <div className="symptom-avatar-circle">
+                      <User size={24} />
+                    </div>
+                    <div className="symptom-info">
+                      <span className="symptom-code">{symptom.symptomsText}</span>
+                      {symptom.structuredData && (
+                        <div className="structured-data">
+                          {symptom.structuredData.symptoms && symptom.structuredData.symptoms.length > 0 && (
+                            <div className="data-item">
+                              <strong>Symptoms:</strong> {symptom.structuredData.symptoms.join(', ')}
+                            </div>
+                          )}
+                          {symptom.structuredData.duration && (
+                            <div className="data-item">
+                              <strong>Duration:</strong> {symptom.structuredData.duration}
+                            </div>
+                          )}
+                          {symptom.structuredData.severity && (
+                            <div className="data-item">
+                              <strong>Severity:</strong> {symptom.structuredData.severity}
+                            </div>
+                          )}
+                          {symptom.structuredData.frequency && (
+                            <div className="data-item">
+                              <strong>Frequency:</strong> {symptom.structuredData.frequency}
+                            </div>
+                          )}
+                          {symptom.structuredData.progression && (
+                            <div className="data-item">
+                              <strong>Progression:</strong> {symptom.structuredData.progression}
+                            </div>
+                          )}
+                          {symptom.structuredData.notes && (
+                            <div className="data-item">
+                              <strong>Notes:</strong> {symptom.structuredData.notes}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <span className="symptom-timestamp">{new Date(symptom.createdAt).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {inputMode === 'type' && view === 'initial' && (
               <div className="text-input-area">

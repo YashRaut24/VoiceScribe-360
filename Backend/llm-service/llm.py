@@ -1,20 +1,64 @@
 from google import genai
 from dotenv import load_dotenv
 import os
+import json
+import re
 
 load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-# print(client.models.generate_content(
-#     model="gemini-2.5-flash", contents="Hello"
-#).text)
+def run_llm(symptom_text: str):
+    prompt = f"""
+You are a medical information extraction system.
 
-def run_llm(prompt: str) -> str:
+Rules:
+- Do NOT diagnose disease
+- Extract ONLY what is mentioned
+- Do NOT add new information
+- Use simple medical terms
+- Return ONLY valid JSON
+- Do not include explanation text
+
+JSON format:
+{{
+  "symptoms": [],
+  "duration": "",
+  "severity": "",
+  "frequency": "",
+  "progression": "",
+  "notes": ""
+}}
+
+Patient input:
+"{symptom_text}"
+"""
+
+    print("LLM Prompt:", prompt)
+
     response = client.models.generate_content(
         model="gemini-2.5-flash",
-        contents=prompt
+        contents=prompt,   # 🔥 FIXED (was "hello")
     )
 
-    print(response.text)
-    return response.text
+    text = response.text.strip()
+    print("LLM Raw Response:", text)
+
+    if text.startswith("```"):
+        text = re.sub(r"^```json\s*|```$", "", text, flags=re.MULTILINE).strip()
+
+    # 🔐 SAFETY: ensure string
+    if not isinstance(text, str):
+        raise ValueError("LLM did not return text")
+
+    parsed = json.loads(text)
+
+    return parsed
+    # 🔐 SAFETY: ensure valid JSON
+    # try:
+    #     parsed = json.loads(text)
+    # except Exception as e:
+    #     raise ValueError(f"Invalid JSON from LLM: {e}")
+
+    # # ✅ RETURN JSON (dict)
+    # return parsed
