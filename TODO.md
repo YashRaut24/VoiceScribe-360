@@ -1,0 +1,5 @@
+- [x] Add SymptomLog schema to models.js with fields: userId, symptomsText, createdAt
+- [x] Export SymptomLog in models.js
+- [x] Add POST /symptoms route in routes.js to create a SymptomLog entry
+- [x] Add createSymptom method to api.js
+- [x] Update SymptomLogging.jsx to use api service

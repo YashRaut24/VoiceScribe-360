@@ -47,9 +47,16 @@ const loginSessionSchema = new mongoose.Schema({
   userAgent: String
 });
 
+const symptomLogSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  symptomsText: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
 module.exports = {
   User: mongoose.model('User', userSchema),
   Appointment: mongoose.model('Appointment', appointmentSchema),
   MedicalRecord: mongoose.model('MedicalRecord', medicalRecordSchema),
-  LoginSession: mongoose.model('LoginSession', loginSessionSchema)
+  LoginSession: mongoose.model('LoginSession', loginSessionSchema),
+  SymptomLog: mongoose.model('SymptomLog', symptomLogSchema)
 };

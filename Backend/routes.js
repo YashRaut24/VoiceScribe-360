@@ -1,6 +1,7 @@
 const express = require('express');
-const { Appointment, MedicalRecord, User } = require('./models');
+const { Appointment, MedicalRecord, User, SymptomLog } = require('./models');
 const auth = require('./middleware');
+const axios = require('axios');
 
 const router = express.Router();
 
@@ -93,8 +94,25 @@ router.get('/doctors', auth, async (req, res) => {
     const doctors = await User.find({ userType: 'doctor' })
       .select('firstName lastName specialization')
       .sort({ firstName: 1 });
-    
+
     res.json(doctors);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Create symptom log
+router.post('/symptoms', auth, async (req, res) => {
+  try {
+    const { symptomsText } = req.body;
+
+    const symptomLog = new SymptomLog({
+      userId: req.user.userId,
+      symptomsText
+    });
+
+    await symptomLog.save();
+    res.status(201).json(symptomLog);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

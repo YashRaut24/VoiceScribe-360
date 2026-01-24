@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, ArrowLeft } from 'lucide-react';
+import api from '../services/api';
 import './SymptomLogging.css';
 
 const SymptomLogging = () => {
@@ -43,27 +44,16 @@ const SymptomLogging = () => {
     }
   };
 
-  const handleSubmitText = () => {
+  const handleSubmitText = async () => {
     if (symptomText.trim()) {
-      const newSymptom = {
-        id: Date.now(),
-        code: symptomText.substring(0, 20),
-        timestamp: new Date().toLocaleString('en-GB', {
-          weekday: 'long',
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        }),
-        hasAudio: false,
-        hasText: true
-      };
-      setLoggedSymptoms([...loggedSymptoms, newSymptom]);
-      setSymptomText('');
-      setView('logging');
-      setInputMode(null);
+      try {
+        await api.createSymptom(symptomText);
+        setSymptomText('');
+        setView('logging');
+        setInputMode(null);
+      } catch (error) {
+        console.error('Error submitting symptoms:', error);
+      }
     }
   };
 

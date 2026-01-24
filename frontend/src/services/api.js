@@ -98,6 +98,14 @@ class ApiService {
   async getDoctors() {
     return this.request('/doctors');
   }
+
+  // Symptoms
+  async createSymptom(symptomsText) {
+    return this.request('/symptoms', {
+      method: 'POST',
+      body: JSON.stringify({ symptomsText }),
+    });
+  }
 }
 
 export default new ApiService();
