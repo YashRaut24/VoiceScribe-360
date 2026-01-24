@@ -7,9 +7,9 @@ const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   phone: String,
-  specialization: { type: String, required: function() { return this.userType === 'doctor'; } },
-  licenseNumber: { type: String, required: function() { return this.userType === 'doctor'; } },
-  dateOfBirth: { type: Date, required: function() { return this.userType === 'patient'; } },
+  specialization: { type: String, function() { return this.userType === 'doctor'; } },
+  licenseNumber: { type: String, function() { return this.userType === 'doctor'; } },
+  dateOfBirth: { type: Date, function() { return this.userType === 'patient'; } },
   createdAt: { type: Date, default: Date.now }
 });
 

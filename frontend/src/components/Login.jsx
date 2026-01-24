@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mic, Mail, Lock, ArrowLeft, Eye, EyeOff, Stethoscope, User } from 'lucide-react';
 import './Login.css';
+// import axios from 'axios';
 
 const Login = () => {
   const [userType, setUserType] = useState('doctor');
@@ -21,6 +22,7 @@ const Login = () => {
 
   const handleSubmit = () => {
     console.log('Login data:', { ...formData, userType });
+    
     // Add your login logic here
   };
 
@@ -197,14 +199,7 @@ const Login = () => {
             <a href="/signup">Sign Up</a>
           </p>
 
-          {/* Demo Account Info */}
-          <div className="demo-info">
-            <p>Demo Account</p>
-            <p>
-              Doctor: demo@doctor.com / Pass: demo123<br/>
-              Patient: demo@patient.com / Pass: demo123
-            </p>
-          </div>
+    
         </div>
       </div>
     </div>

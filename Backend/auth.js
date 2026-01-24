@@ -8,7 +8,17 @@ const router = express.Router();
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, userType, firstName, lastName, phone, specialization, licenseNumber, dateOfBirth } = req.body;
+const {
+  email,
+  password,
+  userType,
+  firstName,
+  lastName,
+  phone,
+  specialization,
+  licenseNumber,
+  dateOfBirth
+} = req.body;
     
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -49,10 +59,62 @@ router.post('/register', async (req, res) => {
       }
     });
   } catch (error) {
+    console.log(error);
+    
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
+router.post('/registerPatient', async (req, res) => {
+  console.log(req.body);
+   try {
+    const {
+      email,
+      password,
+      userType,
+      firstName,
+      lastName,
+      phone,
+    } = req.body;
+    
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    
+    const userData = {
+      email,
+      password: hashedPassword,
+      userType,
+      firstName,
+      lastName,
+      phone
+    };
+
+    const user = new User(userData);
+    await user.save();
+
+    const token = jwt.sign({ userId: user._id, userType: user.userType }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    
+    res.status(201).json({
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        userType: user.userType,
+        firstName: user.firstName,
+        lastName: user.lastName
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+  
+});
 // Login
 router.post('/login', async (req, res) => {
   try {

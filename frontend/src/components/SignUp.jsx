@@ -5,6 +5,10 @@ import './SignUp.css';
 const SignUp = () => {
   const [userType, setUserType] = useState('doctor');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isPatient, setIsPatient] = useState(false);
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -23,10 +27,83 @@ const SignUp = () => {
     });
   };
 
-  const handleSubmit = () => {
-    console.log('Signup data:', { ...formData, userType });
-    // Add your signup logic here
-  };
+const handleSubmit = async () => {
+  setError('');
+
+  if (!formData.fullName || !formData.email || !formData.password) {
+    setError('Please fill all required fields');
+    return;
+  }
+
+  if (formData.password !== formData.confirmPassword) {
+    setError('Passwords do not match');
+    return;
+  }
+
+  if (userType === 'doctor') {
+    if (!formData.licenseNumber || !formData.specialization) {
+      setError('Doctor details are required');
+      return;
+    }
+  }
+
+  setLoading(true);
+
+  try {
+    const nameParts = formData.fullName.trim().split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ') || 'NA';
+
+    const payload = {
+      email: formData.email,
+      password: formData.password,
+      userType,
+      firstName,
+      lastName,
+      phone: formData.phoneNumber
+    };
+
+    if (userType === 'doctor') {
+      payload.specialization = formData.specialization;
+      payload.licenseNumber = formData.licenseNumber;
+    }
+    if(userType === 'patient'){
+      const res = await fetch('http://localhost:3000/api/auth/registerPatient', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    }else{
+        const res = await fetch('http://localhost:3000/api/auth/register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+        });
+    }
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || 'Signup failed');
+    }
+
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+
+    console.log('Signup success:', data);
+
+    window.location.href = '/dashboard';
+
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="signup-page">
@@ -266,11 +343,18 @@ const SignUp = () => {
                 <a href="#">Privacy Policy</a>
               </label>
             </div>
+            {error && <p className="signup-error">{error}</p>}
+
 
             {/* Submit Button */}
-            <button onClick={handleSubmit} className="signup-submit-btn">
-              Create Account
+           <button
+            onClick={handleSubmit}
+            className="signup-submit-btn"
+            disabled={loading}
+            >
+            {loading ? 'Creating Account...' : 'Create Account'}
             </button>
+
           </div>
 
           {/* Login Link */}
