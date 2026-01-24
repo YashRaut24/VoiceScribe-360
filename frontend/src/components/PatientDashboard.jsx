@@ -1,13 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, ArrowRight, FileText, Stethoscope, Activity, Shield, Lock, Heart } from 'lucide-react';
+import { User, ArrowRight, FileText, Stethoscope, Activity, Shield, Lock, Heart, LogOut, ChevronDown } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import './PatientDashboard.css';
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleStartLogging = () => {
     navigate('/patient/log-symptoms');
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   return (
@@ -18,8 +38,64 @@ const PatientDashboard = () => {
           <div className="dashboard-logo">
             <span>VoiceScribe-360</span>
           </div>
-          <div className="dashboard-profile">
-            <User />
+          <div className="dashboard-profile" style={{ position: 'relative' }} ref={profileMenuRef}>
+            <button 
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '0.5rem',
+                borderRadius: '0.5rem',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+            >
+              <User />
+              <span>{user?.firstName} {user?.lastName}</span>
+              <ChevronDown size={16} />
+            </button>
+            
+            {showProfileMenu && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                backgroundColor: 'white',
+                border: '1px solid #e2e8f0',
+                borderRadius: '0.5rem',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                minWidth: '150px',
+                zIndex: 1000,
+                marginTop: '0.5rem'
+              }}>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem 1rem',
+                    border: 'none',
+                    background: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    color: '#ef4444',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#fef2f2'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </nav>

@@ -100,11 +100,15 @@ class ApiService {
   }
 
   // Symptoms
-  async createSymptom(symptomsText) {
+  async createSymptom(symptomsText, severity = 'mild') {
     return this.request('/symptoms', {
       method: 'POST',
-      body: JSON.stringify({ symptomsText }),
+      body: JSON.stringify({ symptomsText, severity }),
     });
+  }
+
+  async getSymptoms() {
+    return this.request('/symptoms');
   }
 }
 
