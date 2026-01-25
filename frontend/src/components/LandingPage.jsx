@@ -7,7 +7,6 @@ const LandingPage = () => {
 
   return (
     <div className="landing-page">
-      {/* Navigation */}
       <nav className="navbar">
         <div className="navbar-container">
           <div className="navbar-content">
@@ -41,7 +40,6 @@ const LandingPage = () => {
         )}
       </nav>
 
-      {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-container">
           <h1 className="hero-title">
@@ -63,7 +61,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Features Section */}
       <section id="features" className="features-section">
         <div className="section-container">
           <div className="section-header">
@@ -150,7 +147,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* How It Works */}
       <section id="how-it-works" className="how-it-works-section">
         <div className="section-container">
           <div className="section-header">
@@ -201,7 +197,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Benefits */}
       <section id="benefits" className="benefits-section">
         <div className="section-container">
           <div className="section-header">
@@ -253,7 +248,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="cta-section">
         <div className="cta-container">
           <h2 className="cta-title">
@@ -269,7 +263,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="footer">
         <div className="footer-container">
           <div className="footer-grid">

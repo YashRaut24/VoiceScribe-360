@@ -3,10 +3,8 @@ const { Appointment, MedicalRecord, User, SymptomLog, SymptomLogDoctor } = requi
 const auth = require('./middleware');
 const axios = require('axios');
 
-
 const router = express.Router();
 
-// Get appointments
 router.get('/appointments', auth, async (req, res) => {
   try {
     const query = req.user.userType === 'doctor' 
@@ -24,7 +22,6 @@ router.get('/appointments', auth, async (req, res) => {
   }
 });
 
-// Create appointment
 router.post('/appointments', auth, async (req, res) => {
   try {
     const { doctorId, patientId, date, duration, notes } = req.body;
@@ -47,7 +44,6 @@ router.post('/appointments', auth, async (req, res) => {
   }
 });
 
-// Get medical records
 router.get('/medical-records', auth, async (req, res) => {
   try {
     const query = req.user.userType === 'doctor' 
@@ -65,7 +61,6 @@ router.get('/medical-records', auth, async (req, res) => {
   }
 });
 
-// Create medical record
 router.post('/medical-records', auth, async (req, res) => {
   try {
     const { patientId, appointmentId, voiceTranscription, soapNotes, diagnosis, prescription } = req.body;
@@ -89,7 +84,6 @@ router.post('/medical-records', auth, async (req, res) => {
   }
 });
 
-// Get doctors (for patient booking)
 router.get('/doctors', auth, async (req, res) => {
   try {
     const doctors = await User.find({ userType: 'doctor' })
@@ -102,7 +96,6 @@ router.get('/doctors', auth, async (req, res) => {
   }
 });
 
-// Get symptom logs for logged-in user
 router.get('/symptoms', auth, async (req, res) => {
   try {
     const symptomLogs = await SymptomLogDoctor.find({ userId: req.user.userId })
@@ -115,14 +108,12 @@ router.get('/symptoms', auth, async (req, res) => {
   }
 });
 
-// Create symptom log
 router.post('/symptoms', auth, async (req, res) => {
   try {
     const { symptomsText } = req.body;
 
     let structuredData = null;
 
-    // Send data to LLM service
     try {
       const llmResponse = await axios.post("http://localhost:5000/extract", {
         symptoms: symptomsText,
@@ -130,11 +121,9 @@ router.post('/symptoms', auth, async (req, res) => {
 
       console.log("LLM STRUCTURED DATA 👉", llmResponse.data);
 
-      // Save structured data
       structuredData = llmResponse.data.structuredData;
     } catch (llmError) {
       console.error('LLM Service Error:', llmError.response?.data || llmError.message);
-      // Do not throw error - continue with symptom logging
     }
 
     const symptomLog = new SymptomLogDoctor({

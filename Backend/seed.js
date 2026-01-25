@@ -6,11 +6,9 @@ const { User } = require('./models');
 
 const seedUsers = async () => {
   try {
-    // Connect to MongoDB
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/voicescribe');
     console.log('Connected to MongoDB');
 
-    // Check if demo users already exist
     const existingDoctorDemo = await User.findOne({ email: 'demo@doctor.com' });
     const existingPatientDemo = await User.findOne({ email: 'demo@patient.com' });
 
@@ -19,7 +17,6 @@ const seedUsers = async () => {
       process.exit(0);
     }
 
-    // Create demo doctor
     if (!existingDoctorDemo) {
       const hashedPassword = await bcrypt.hash('demo123', 12);
       const demoDoctor = new User({
@@ -36,7 +33,6 @@ const seedUsers = async () => {
       console.log('Demo doctor created');
     }
 
-    // Create demo patient
     if (!existingPatientDemo) {
       const hashedPassword = await bcrypt.hash('demo123', 12);
       const demoPatient = new User({

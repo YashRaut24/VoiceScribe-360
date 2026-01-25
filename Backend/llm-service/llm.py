@@ -22,12 +22,12 @@ Rules:
 
 JSON format:
 {{
-  "symptoms": [],
-  "duration": "",
-  "severity": "",
-  "frequency": "",
-  "progression": "",
-  "notes": ""
+"symptoms": [],
+"duration": "",
+"severity": "",
+"frequency": "",
+"progression": "",
+"notes": ""
 }}
 
 Patient input:
@@ -38,7 +38,7 @@ Patient input:
 
     response = client.models.generate_content(
         model="gemini-2.5-flash",
-        contents=prompt,   # 🔥 FIXED (was "hello")
+        contents=prompt,
     )
 
     text = response.text.strip()
@@ -47,18 +47,7 @@ Patient input:
     if text.startswith("```"):
         text = re.sub(r"^```json\s*|```$", "", text, flags=re.MULTILINE).strip()
 
-    # 🔐 SAFETY: ensure string
-    if not isinstance(text, str):
-        raise ValueError("LLM did not return text")
-
     parsed = json.loads(text)
 
+    print("LLM Parsed Response:", parsed)
     return parsed
-    # 🔐 SAFETY: ensure valid JSON
-    # try:
-    #     parsed = json.loads(text)
-    # except Exception as e:
-    #     raise ValueError(f"Invalid JSON from LLM: {e}")
-
-    # # ✅ RETURN JSON (dict)
-    # return parsed

@@ -74,7 +74,7 @@ const Login = () => {
 
   return (
     <div className="login-page">
-      {/* Left Side - Branding */}
+  
       <div className="login-branding">
         <div>
           <div className="branding-logo">
@@ -115,7 +115,7 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
+  
       <div className="login-form-container">
         <div className="login-form-wrapper">
           <div className="mobile-logo">
@@ -131,7 +131,7 @@ const Login = () => {
           <h2 className="form-title">Sign In</h2>
           <p className="form-subtitle">Access your VoiceScribe account</p>
 
-          {/* User Type Selection */}
+      
           <div className="user-type-toggle">
             <button
               type="button"
@@ -152,7 +152,7 @@ const Login = () => {
           </div>
 
           <div>
-            {/* Email */}
+        
             <div className="form-group">
               <label className="form-label">Email Address</label>
               <div className="input-wrapper">
@@ -168,7 +168,7 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Password */}
+        
             <div className="form-group">
               <label className="form-label">Password</label>
               <div className="input-wrapper">
@@ -191,7 +191,7 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Remember Me & Forgot Password */}
+        
             <div className="form-options">
               <div className="checkbox-wrapper">
                 <input
@@ -219,7 +219,7 @@ const Login = () => {
               </div>
             )}
 
-            {/* Submit Button */}
+        
             <button 
               onClick={handleSubmit} 
               className="submit-btn"
@@ -232,7 +232,7 @@ const Login = () => {
               {loading ? 'Signing In...' : 'Sign In'}
             </button>
 
-            {/* Divider */}
+        
             <div className="divider">
               <div className="divider-line"></div>
               <div className="divider-text">
@@ -240,7 +240,7 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Social Login Buttons */}
+        
             <div className="social-login">
               <button className="social-btn">
                 <svg viewBox="0 0 24 24">
@@ -260,13 +260,13 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Sign Up Link */}
+      
           <p className="signup-link">
             Don't have an account?{' '}
             <a href="/signup">Sign Up</a>
           </p>
 
-          {/* Demo Account Info */}
+      
           <div className="demo-info">
             <p>Demo Accounts</p>
             <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>

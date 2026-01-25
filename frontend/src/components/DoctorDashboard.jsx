@@ -71,7 +71,6 @@ const DoctorDashboard = () => {
     setIsRecording(true);
     setRecordingTime(0);
     setTranscription('');
-    // Simulate transcription
     setTimeout(() => {
       setTranscription('Patient reports headache for the past 3 days, accompanied by mild nausea...');
     }, 3000);
@@ -80,7 +79,6 @@ const DoctorDashboard = () => {
   const stopRecording = async () => {
     setIsRecording(false);
     
-    // Simulate AI processing
     const mockRecord = {
       patientId: '507f1f77bcf86cd799439011',
       voiceTranscription: transcription + ' [Recording stopped at ' + formatTime(recordingTime) + ']',
@@ -137,7 +135,6 @@ const DoctorDashboard = () => {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
-      {/* Header */}
       <header style={{
         backgroundColor: 'white',
         borderBottom: '1px solid #e2e8f0',
@@ -179,7 +176,6 @@ const DoctorDashboard = () => {
       </header>
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
-        {/* Navigation Tabs */}
         <div style={{
           display: 'flex',
           gap: '1rem',
@@ -217,12 +213,10 @@ const DoctorDashboard = () => {
           })}
         </div>
 
-        {/* Dashboard Overview */}
         {activeTab === 'dashboard' && (
           <div>
             <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem' }}>Dashboard Overview</h2>
             
-            {/* Stats Cards */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
@@ -275,7 +269,6 @@ const DoctorDashboard = () => {
               </div>
             </div>
 
-            {/* Recent Activity */}
             <div style={{
               backgroundColor: 'white',
               padding: '1.5rem',
@@ -304,7 +297,6 @@ const DoctorDashboard = () => {
           </div>
         )}
 
-        {/* Voice Consultation */}
         {activeTab === 'consultation' && (
           <div>
             <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem' }}>Voice Consultation</h2>
@@ -314,7 +306,6 @@ const DoctorDashboard = () => {
               gridTemplateColumns: '1fr 1fr',
               gap: '2rem'
             }}>
-              {/* Recording Controls */}
               <div style={{
                 backgroundColor: 'white',
                 padding: '2rem',
@@ -379,7 +370,6 @@ const DoctorDashboard = () => {
                 </button>
               </div>
               
-              {/* Live Transcription */}
               <div style={{
                 backgroundColor: 'white',
                 padding: '2rem',
@@ -419,7 +409,6 @@ const DoctorDashboard = () => {
           </div>
         )}
 
-        {/* Medical Records */}
         {activeTab === 'records' && (
           <div>
             <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem' }}>Medical Records</h2>

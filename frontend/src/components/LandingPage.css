@@ -1,13 +1,10 @@
-/* LandingPage.css */
 
-/* Base styles */
 .landing-page {
     min-height: 100vh;
     background-color: #ffffff;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
-/* Navigation */
 .navbar {
     position: fixed;
     top: 0;
@@ -102,7 +99,6 @@
     text-align: center;
 }
 
-/* Hero Section */
 .hero-section {
     padding-top: 8rem;
     padding-bottom: 5rem;
@@ -181,7 +177,6 @@
     background-color: #eff6ff;
 }
 
-/* Features Section */
 .features-section {
     padding: 5rem 1rem;
     background-color: #f9fafb;
@@ -287,7 +282,6 @@
     color: #374151;
 }
 
-/* How It Works Section */
 .how-it-works-section {
     padding: 5rem 1rem;
 }
@@ -347,7 +341,6 @@
     opacity: 0.5;
 }
 
-/* Benefits Section */
 .benefits-section {
     padding: 5rem 1rem;
     background-color: #f9fafb;
@@ -391,7 +384,6 @@
     color: #6b7280;
 }
 
-/* CTA Section */
 .cta-section {
     padding: 5rem 1rem;
     text-align: center;
@@ -415,7 +407,6 @@
     margin-bottom: 2rem;
 }
 
-/* Footer */
 .footer {
     background-color: #111827;
     color: #ffffff;
@@ -487,7 +478,6 @@
     color: #9ca3af;
 }
 
-/* Responsive Design */
 @media (min-width: 768px) {
     .navbar-menu {
         display: flex;

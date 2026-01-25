@@ -1,11 +1,11 @@
-/* Patient Dashboard Styles */
+
 .patient-dashboard {
     min-height: 100vh;
     background-color: #f9fafb;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
-/* Top Navigation */
+
 .dashboard-navbar {
     background-color: #ffffff;
     border-bottom: 1px solid #e5e7eb;
@@ -51,14 +51,14 @@
     color: #2563eb;
 }
 
-/* Main Container */
+
 .dashboard-container {
     max-width: 1280px;
     margin: 0 auto;
     padding: 2rem 1.5rem;
 }
 
-/* Welcome Section */
+
 .welcome-section {
     text-align: center;
     padding: 3rem 1rem;
@@ -108,7 +108,7 @@
     height: 1.25rem;
 }
 
-/* Section Heading */
+
 .section-heading {
     font-size: 2rem;
     font-weight: 700;
@@ -117,7 +117,7 @@
     text-align: center;
 }
 
-/* Care Journey Section */
+
 .care-journey-section {
     margin-bottom: 3rem;
 }
@@ -203,7 +203,7 @@
     background-color: #e5e7eb;
 }
 
-/* Info Section */
+
 .info-section {
     background-color: #ffffff;
     padding: 2rem;
@@ -230,7 +230,7 @@
     line-height: 1.6;
 }
 
-/* Trust Section */
+
 .trust-section {
     margin-bottom: 3rem;
 }
@@ -268,7 +268,7 @@
     font-size: 0.875rem;
 }
 
-/* Footer */
+
 .dashboard-footer {
     background-color: #ffffff;
     border-top: 1px solid #e5e7eb;
@@ -281,7 +281,7 @@
     font-size: 0.875rem;
 }
 
-/* Responsive Design */
+
 @media (min-width: 768px) {
     .welcome-title {
         font-size: 3rem;

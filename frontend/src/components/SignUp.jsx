@@ -91,7 +91,7 @@ const SignUp = () => {
 
   return (
     <div className="signup-page">
-      {/* Left Side - Branding */}
+      {}
       <div className="signup-branding">
         <div>
           <div className="branding-logo">
@@ -145,7 +145,7 @@ const SignUp = () => {
         </div>
       </div>
 
-      {/* Right Side - Signup Form */}
+      {}
       <div className="signup-form-container">
         <div className="signup-form-wrapper">
           <div className="signup-mobile-logo">
@@ -161,7 +161,7 @@ const SignUp = () => {
           <h2 className="signup-title">Create Account</h2>
           <p className="signup-subtitle">Start your journey with VoiceScribe</p>
 
-          {/* User Type Selection */}
+          {}
           <div className="signup-user-toggle">
             <button
               type="button"
@@ -195,7 +195,7 @@ const SignUp = () => {
               </div>
             )}
 
-            {/* First Name */}
+            {}
             <div className="signup-form-group">
               <label className="signup-label">First Name *</label>
               <div className="signup-input-wrapper">
@@ -212,7 +212,7 @@ const SignUp = () => {
               </div>
             </div>
 
-            {/* Last Name */}
+            {}
             <div className="signup-form-group">
               <label className="signup-label">Last Name *</label>
               <div className="signup-input-wrapper">
@@ -229,7 +229,7 @@ const SignUp = () => {
               </div>
             </div>
 
-            {/* Email */}
+            {}
             <div className="signup-form-group">
               <label className="signup-label">Email Address *</label>
               <div className="signup-input-wrapper">
@@ -246,7 +246,7 @@ const SignUp = () => {
               </div>
             </div>
 
-            {/* Doctor-specific fields */}
+            {}
             {userType === 'doctor' && (
               <>
                 <div className="signup-form-group">
@@ -284,7 +284,7 @@ const SignUp = () => {
               </>
             )}
 
-            {/* Patient-specific fields */}
+            {}
             {userType === 'patient' && (
               <div className="signup-form-group">
                 <label className="signup-label">Date of Birth *</label>
@@ -299,7 +299,7 @@ const SignUp = () => {
               </div>
             )}
 
-            {/* Phone Number */}
+            {}
             <div className="signup-form-group">
               <label className="signup-label">Phone Number</label>
               <input
@@ -312,7 +312,7 @@ const SignUp = () => {
               />
             </div>
 
-            {/* Password */}
+            {}
             <div className="signup-form-group">
               <label className="signup-label">Password *</label>
               <div className="signup-input-wrapper">
@@ -337,7 +337,7 @@ const SignUp = () => {
               </div>
             </div>
 
-            {/* Confirm Password */}
+            {}
             <div className="signup-form-group">
               <label className="signup-label">Confirm Password *</label>
               <div className="signup-input-wrapper">
@@ -354,7 +354,7 @@ const SignUp = () => {
               </div>
             </div>
 
-            {/* Terms */}
+            {}
             <div className="signup-terms">
               <input type="checkbox" id="terms" required />
               <label htmlFor="terms">
@@ -365,7 +365,7 @@ const SignUp = () => {
               </label>
             </div>
 
-            {/* Submit Button */}
+            {}
             <button 
               onClick={handleSubmit} 
               className="signup-submit-btn"
@@ -379,7 +379,7 @@ const SignUp = () => {
             </button>
           </div>
 
-          {/* Login Link */}
+          {}
           <p className="signup-login-link">
             Already have an account?{' '}
             <a href="/login">Sign In</a>

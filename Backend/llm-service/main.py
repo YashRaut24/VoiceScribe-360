@@ -1,13 +1,14 @@
 from flask import Flask, request, jsonify
 from llm import run_llm
-
 app = Flask(__name__)
+
 
 @app.route('/extract', methods=['POST'])
 def extract_symptoms():
     data = request.get_json()
 
     if not data or 'symptoms' not in data:
+        
         return jsonify({"error": "Missing 'symptoms' field"}), 400
 
     symptom_text = data['symptoms']
@@ -26,5 +27,15 @@ def extract_symptoms():
         }), 500
 
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+# if __name__ == '__main__':
+#     app.run(host='0.0.0.0', port=5000, debug=True)
+
+if __name__ == "__main__":
+    text = input("Enter symptoms: ")
+
+    result = run_llm(text)
+
+    print("\nFinal Extracted JSON:")
+    print(result)
+
+app = Flask(__name__)

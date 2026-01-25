@@ -12,7 +12,7 @@ const PatientDashboard = () => {
 
   return (
     <div className="patient-dashboard">
-      {/* Top Navigation Bar */}
+      
       <nav className="dashboard-navbar">
         <div className="dashboard-navbar-content">
           <div className="dashboard-logo">
@@ -24,9 +24,9 @@ const PatientDashboard = () => {
         </div>
       </nav>
 
-      {/* Main Content */}
+      
       <div className="dashboard-container">
-        {/* Welcome Section */}
+        
         <section className="welcome-section">
           <h1 className="welcome-title">Feeling unusual lately?</h1>
           <p className="welcome-subtitle">
@@ -38,7 +38,7 @@ const PatientDashboard = () => {
           </button>
         </section>
 
-        {/* Care Journey Section */}
+        
         <section className="care-journey-section">
           <h2 className="section-heading">Your Complete Care Journey</h2>
           <div className="care-journey-grid">
@@ -86,7 +86,7 @@ const PatientDashboard = () => {
           </div>
         </section>
 
-        {/* How VoiceScribe Works */}
+        
         <section className="info-section">
           <h2 className="section-heading">How VoiceScribe-360 Works</h2>
           <div className="info-content">
@@ -107,7 +107,7 @@ const PatientDashboard = () => {
           </div>
         </section>
 
-        {/* Privacy & Trust Section */}
+        
         <section className="trust-section">
           <div className="trust-grid">
             <div className="trust-card">
@@ -129,7 +129,7 @@ const PatientDashboard = () => {
         </section>
       </div>
 
-      {/* Footer */}
+      
       <footer className="dashboard-footer">
         <p>&copy; 2026 VoiceScribe-360. Built for GDG AI Hackathon 2.0.</p>
       </footer>

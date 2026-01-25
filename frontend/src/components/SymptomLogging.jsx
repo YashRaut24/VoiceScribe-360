@@ -93,7 +93,7 @@ const SymptomLogging = () => {
 
   return (
     <div className="symptom-logging-new">
-      {/* Sidebar */}
+      
       <aside className="sidebar">
         <div className="sidebar-content">
           <div className="profile-section">
@@ -127,7 +127,7 @@ const SymptomLogging = () => {
         </button>
       </aside>
 
-      {/* Main Content */}
+      
       <main className="main-content">
         {view !== 'summary' && (
           <>
@@ -269,7 +269,7 @@ const SymptomLogging = () => {
         )}
       </main>
 
-      {/* Confirmation Modal */}
+      
       {showConfirmModal && (
         <div className="modal-overlay">
           <div className="modal-content">

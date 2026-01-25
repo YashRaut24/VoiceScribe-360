@@ -1,11 +1,11 @@
-/* SignUp Page Styles */
+
 .signup-page {
   display: flex;
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Left Side - Branding */
+
 .signup-branding {
   flex: 1;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -98,7 +98,7 @@
   opacity: 0.7;
 }
 
-/* Right Side - Form */
+
 .signup-form-container {
   flex: 1;
   background: white;
@@ -152,7 +152,7 @@
   margin-bottom: 2rem;
 }
 
-/* User Type Toggle */
+
 .signup-user-toggle {
   display: flex;
   background: #f1f5f9;
@@ -186,7 +186,7 @@
   color: #64748b;
 }
 
-/* Form Elements */
+
 .signup-form {
   display: flex;
   flex-direction: column;
@@ -272,7 +272,7 @@
   padding: 0.25rem;
 }
 
-/* Terms */
+
 .signup-terms {
   display: flex;
   align-items: flex-start;
@@ -302,7 +302,7 @@
   text-decoration: underline;
 }
 
-/* Submit Button */
+
 .signup-submit-btn {
   width: 100%;
   padding: 0.75rem;
@@ -326,7 +326,7 @@
   cursor: not-allowed;
 }
 
-/* Links */
+
 .signup-login-link {
   text-align: center;
   color: #6b7280;
@@ -343,7 +343,7 @@
   text-decoration: underline;
 }
 
-/* Responsive Design */
+
 @media (max-width: 768px) {
   .signup-page {
     flex-direction: column;

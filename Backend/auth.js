@@ -5,7 +5,6 @@ const { User, LoginSession } = require('./models');
 
 const router = express.Router();
 
-// Register
 router.post('/register', async (req, res) => {
   try {
 const {
@@ -115,7 +114,7 @@ router.post('/registerPatient', async (req, res) => {
   }
   
 });
-// Login
+
 router.post('/login', async (req, res) => {
   try {
     const { email, password, userType } = req.body;
