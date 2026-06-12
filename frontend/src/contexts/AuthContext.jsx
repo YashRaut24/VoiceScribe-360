@@ -1,52 +1,39 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useState } from 'react';
 import apiService from '../services/api';
+import AuthContext from './auth-context';
 
-const AuthContext = createContext();
+const getStoredUser = () => {
+  const token = localStorage.getItem('token');
+  const userData = localStorage.getItem('user');
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (!token || !userData) {
+    return null;
   }
-  return context;
+
+  try {
+    return JSON.parse(userData);
+  } catch {
+    localStorage.removeItem('user');
+    apiService.removeToken();
+    return null;
+  }
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    if (token && userData) {
-      setUser(JSON.parse(userData));
-      apiService.setToken(token);
-    }
-    
-    setLoading(false);
-  }, []);
+  const [user, setUser] = useState(getStoredUser);
 
   const login = async (email, password, userType) => {
-    try {
-      const response = await apiService.login(email, password, userType);
-      setUser(response.user);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = await apiService.login(email, password, userType);
+    setUser(response.user);
+    localStorage.setItem('user', JSON.stringify(response.user));
+    return response;
   };
 
   const register = async (userData) => {
-    try {
-      const response = await apiService.register(userData);
-      setUser(response.user);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = await apiService.register(userData);
+    setUser(response.user);
+    localStorage.setItem('user', JSON.stringify(response.user));
+    return response;
   };
 
   const logout = () => {
@@ -60,7 +47,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    loading,
+    loading: false,
     isAuthenticated: !!user,
   };
 

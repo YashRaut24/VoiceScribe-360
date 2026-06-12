@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mic, Mail, Lock, ArrowLeft, Eye, EyeOff, Stethoscope, User } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import './Login.css';
 
-const Login = () => {
+const Login = () => { 
   const navigate = useNavigate();
   const { login } = useAuth();
   const [userType, setUserType] = useState('doctor');

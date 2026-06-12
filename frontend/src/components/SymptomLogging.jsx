@@ -7,11 +7,14 @@ const SymptomLogging = () => {
   const [view, setView] = useState('initial'); // 'initial', 'logging', 'summary'
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [inputMode, setInputMode] = useState(null); // 'type' or 'speak'
+  const [textInput, setTextInput] = useState(false);
+  const [speakInput, setSpeakInput] = useState(false);
   const [symptomText, setSymptomText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [loggedSymptoms, setLoggedSymptoms] = useState([]);
   const [careSessions, setCareSessions] = useState(['Care Session 001']);
   const [fetchedSymptoms, setFetchedSymptoms] = useState([]);
+
 
   useEffect(() => {
     const fetchSymptoms = async () => {
@@ -26,11 +29,12 @@ const SymptomLogging = () => {
   }, []);
 
   const handleTypeClick = () => {
-    setInputMode('type');
+    setTextInput(!textInput);
   };
 
   const handleSpeakClick = () => {
-    setInputMode('speak');
+    // setInputMode('speak');
+    setSpeakInput(!speakInput);
     setIsRecording(!isRecording);
     // Simulate voice recording
     if (!isRecording) {
@@ -64,6 +68,9 @@ const SymptomLogging = () => {
         setSymptomText('');
         setView('logging');
         setInputMode(null);
+        // Refetch symptoms to display the new one with structured data
+        const symptoms = await api.getSymptoms();
+        setFetchedSymptoms(symptoms);
       } catch (error) {
         console.error('Error submitting symptoms:', error);
       }
@@ -133,14 +140,14 @@ const SymptomLogging = () => {
           <>
             <div className="input-controls">
               <button 
-                className={`control-btn ${inputMode === 'type' ? 'active' : ''}`}
+                className={`control-btn ${textInput ? 'active' : ''}`}
                 onClick={handleTypeClick}
               >
                 Type
               </button>
               <span className="or-text">OR</span>
               <button 
-                className={`control-btn ${inputMode === 'speak' || isRecording ? 'active' : ''}`}
+                className={`control-btn ${speakInput|| isRecording ? 'active' : ''}`}
                 onClick={handleSpeakClick}
               >
                 {isRecording ? 'Recording...' : 'Speak'}
@@ -148,6 +155,21 @@ const SymptomLogging = () => {
             </div>
 
             <p className="instruction-text">About your symptoms</p>
+
+            {textInput && (
+              <div className="text-input-area">
+                <textarea
+                  className="symptom-textarea"
+                  placeholder="Describe your symptoms..."
+                  value={symptomText}
+                  onChange={(e) => setSymptomText(e.target.value)}
+                  rows={8}
+                />
+                <button className="submit-btn" onClick={handleSubmitText}>
+                  Submit
+                </button>
+              </div>
+            )}
 
             {fetchedSymptoms.length > 0 && (
               <div className="fetched-symptoms-log">
@@ -199,20 +221,7 @@ const SymptomLogging = () => {
               </div>
             )}
 
-            {inputMode === 'type' && view === 'initial' && (
-              <div className="text-input-area">
-                <textarea
-                  className="symptom-textarea"
-                  placeholder="Describe your symptoms..."
-                  value={symptomText}
-                  onChange={(e) => setSymptomText(e.target.value)}
-                  rows={8}
-                />
-                <button className="submit-btn" onClick={handleSubmitText}>
-                  Submit
-                </button>
-              </div>
-            )}
+            
           </>
         )}
 

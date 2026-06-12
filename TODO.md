@@ -1,0 +1,3 @@
+- [ ] Update index.css for global background to #F8FAFC
+- [ ] Refine PatientDashboard.css to match design system
+- [ ] Major update to SymptomLogging.css: replace black borders, add border-radius, box-shadows, apply color palette

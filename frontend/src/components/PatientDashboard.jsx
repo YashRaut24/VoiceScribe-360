@@ -5,7 +5,7 @@ import './PatientDashboard.css';
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
-
+ 
   const handleStartLogging = () => {
     navigate('/patient/log-symptoms');
   };
@@ -16,7 +16,7 @@ const PatientDashboard = () => {
       <nav className="dashboard-navbar">
         <div className="dashboard-navbar-content">
           <div className="dashboard-logo">
-            <span>VoiceScribe-360</span>
+            <span>MedScribe 360</span>
           </div>
           <div className="dashboard-profile">
             <User />
