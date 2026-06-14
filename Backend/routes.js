@@ -6,6 +6,7 @@ const { validate } = require('./middleware/validation.middleware');
 const { createAppointmentSchema } = require('./validators/appointment.validator');
 const { createMedicalRecordSchema } = require('./validators/medicalRecord.validator');
 const { createSymptomSchema } = require('./validators/symptom.validator');
+const requireRole = require('./middleware/role.middleware');
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ router.get('/appointments', auth, async (req, res) => {
   }
 });
 
-router.post('/appointments', auth,validate(createAppointmentSchema), async (req, res) => {
+router.post('/appointments', auth,requireRole('patient'), validate(createAppointmentSchema), async (req, res) => {
   try {
     const { doctorId, patientId, date, duration, notes } = req.body;
     
@@ -65,7 +66,7 @@ router.get('/medical-records', auth,  async (req, res) => {
   }
 });
 
-router.post('/medical-records', auth,validate(createMedicalRecordSchema), async (req, res) => {
+router.post('/medical-records', auth,requireRole('doctor'), validate(createMedicalRecordSchema), async (req, res) => {
   try {
     const { patientId, appointmentId, voiceTranscription, soapNotes, diagnosis, prescription } = req.body;
     
@@ -88,7 +89,7 @@ router.post('/medical-records', auth,validate(createMedicalRecordSchema), async 
   }
 });
 
-router.get('/doctors', auth, async (req, res) => {
+router.get('/doctors', auth,requireRole('patient'), async (req, res) => {
   try {
     const doctors = await User.find({ userType: 'doctor' })
       .select('firstName lastName specialization')
@@ -100,7 +101,7 @@ router.get('/doctors', auth, async (req, res) => {
   }
 });
 
-router.get('/symptoms', auth, async (req, res) => {
+router.get('/symptoms', auth, requireRole('patient'), async (req, res) => {
   try {
     const symptomLogs = await SymptomLogDoctor.find({ userId: req.user.userId })
       .select('_id symptomsText structuredData createdAt')
@@ -112,7 +113,7 @@ router.get('/symptoms', auth, async (req, res) => {
   }
 });
 
-router.post('/symptoms', auth,validate(createSymptomSchema), async (req, res) => {
+router.post('/symptoms', auth,requireRole('patient'), validate(createSymptomSchema), async (req, res) => {
   try {
     const { symptomsText } = req.body;
 
