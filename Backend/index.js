@@ -35,7 +35,22 @@ const generalLimiter = rateLimit({
 });
 
 app.use(helmet());
-app.use(cors());
+const corsOptions = {
+    origin: function (origin, callback) {
+        const allowedOrigin = process.env.ALLOWED_ORIGIN || 'http://localhost:5173';
+
+        if (!origin || origin === allowedOrigin) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
