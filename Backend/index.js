@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
+const errorHandler = require('./middleware/error.middleware');
 const authRoutes = require('./auth');
 const apiRoutes = require('./routes');
 
@@ -24,6 +25,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'VoiceScribe Backend is running' });
 });
 
+app.use(errorHandler);
+
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+    console.log(`Server is running on http://localhost:${port}`);
 });
