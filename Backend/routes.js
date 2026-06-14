@@ -10,7 +10,7 @@ const requireRole = require('./middleware/role.middleware');
 
 const router = express.Router();
 
-router.get('/appointments', auth, async (req, res) => {
+router.get('/appointments', auth, async (req, res, next) => {
   try {
     const query = req.user.userType === 'doctor' 
       ? { doctorId: req.user.userId }
@@ -23,11 +23,11 @@ router.get('/appointments', auth, async (req, res) => {
     
     res.json(appointments);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
-router.post('/appointments', auth,requireRole('patient'), validate(createAppointmentSchema), async (req, res) => {
+router.post('/appointments', auth,requireRole('patient'), validate(createAppointmentSchema), async (req, res, next) => {
   try {
     const { doctorId, patientId, date, duration, notes } = req.body;
     
@@ -45,11 +45,11 @@ router.post('/appointments', auth,requireRole('patient'), validate(createAppoint
     
     res.status(201).json(appointment);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
-router.get('/medical-records', auth,  async (req, res) => {
+router.get('/medical-records', auth,  async (req, res, next) => {
   try {
     const query = req.user.userType === 'doctor' 
       ? { doctorId: req.user.userId }
@@ -62,11 +62,11 @@ router.get('/medical-records', auth,  async (req, res) => {
     
     res.json(records);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
-router.post('/medical-records', auth,requireRole('doctor'), validate(createMedicalRecordSchema), async (req, res) => {
+router.post('/medical-records', auth,requireRole('doctor'), validate(createMedicalRecordSchema), async (req, res, next) => {
   try {
     const { patientId, appointmentId, voiceTranscription, soapNotes, diagnosis, prescription } = req.body;
     
@@ -85,11 +85,11 @@ router.post('/medical-records', auth,requireRole('doctor'), validate(createMedic
     
     res.status(201).json(record);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
-router.get('/doctors', auth,requireRole('patient'), async (req, res) => {
+router.get('/doctors', auth,requireRole('patient'), async (req, res, next) => {
   try {
     const doctors = await User.find({ userType: 'doctor' })
       .select('firstName lastName specialization')
@@ -97,11 +97,11 @@ router.get('/doctors', auth,requireRole('patient'), async (req, res) => {
 
     res.json(doctors);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
-router.get('/symptoms', auth, requireRole('patient'), async (req, res) => {
+router.get('/symptoms', auth, requireRole('patient'), async (req, res, next) => {
   try {
     const symptomLogs = await SymptomLogDoctor.find({ userId: req.user.userId })
       .select('_id symptomsText structuredData createdAt')
@@ -109,11 +109,11 @@ router.get('/symptoms', auth, requireRole('patient'), async (req, res) => {
 
     res.json(symptomLogs);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
-router.post('/symptoms', auth,requireRole('patient'), validate(createSymptomSchema), async (req, res) => {
+router.post('/symptoms', auth,requireRole('patient'), validate(createSymptomSchema), async (req, res, next) => {
   try {
     const { symptomsText } = req.body;
 
@@ -141,7 +141,7 @@ router.post('/symptoms', auth,requireRole('patient'), validate(createSymptomSche
 
     res.status(201).json(symptomLog);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
