@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'ab5ab79849f4661000f7a25fe309867ef5
 
 const router = express.Router();
 
-router.post('/register',validate(registerSchema), async (req, res) => {
+router.post('/register',validate(registerSchema), async (req, res, next) => {
   try {
 const {
   email,
@@ -63,13 +63,12 @@ const {
       }
     });
   } catch (error) {
-    console.log(error);
-    
-    res.status(500).json({ message: 'Server error', error: error.message });
+   
+    next(error);
   }
 });
 
-router.post('/login',validate(loginSchema) , async (req, res) => {
+router.post('/login',validate(loginSchema) , async (req, res, next) => {
   try {
     const { email, password, userType } = req.body;
     
@@ -104,7 +103,7 @@ router.post('/login',validate(loginSchema) , async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
