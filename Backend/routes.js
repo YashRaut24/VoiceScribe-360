@@ -1,7 +1,11 @@
 const express = require('express');
 const { Appointment, MedicalRecord, User, SymptomLog, SymptomLogDoctor } = require('./models');
-const auth = require('./middleware');
+const auth = require('./middleware/auth.middleware');
 const axios = require('axios');
+const { validate } = require('./middleware/validation.middleware');
+const { createAppointmentSchema } = require('./validators/appointment.validator');
+const { createMedicalRecordSchema } = require('./validators/medicalRecord.validator');
+const { createSymptomSchema } = require('./validators/symptom.validator');
 
 const router = express.Router();
 
@@ -22,7 +26,7 @@ router.get('/appointments', auth, async (req, res) => {
   }
 });
 
-router.post('/appointments', auth, async (req, res) => {
+router.post('/appointments', auth,validate(createAppointmentSchema), async (req, res) => {
   try {
     const { doctorId, patientId, date, duration, notes } = req.body;
     
@@ -44,7 +48,7 @@ router.post('/appointments', auth, async (req, res) => {
   }
 });
 
-router.get('/medical-records', auth, async (req, res) => {
+router.get('/medical-records', auth,  async (req, res) => {
   try {
     const query = req.user.userType === 'doctor' 
       ? { doctorId: req.user.userId }
@@ -61,7 +65,7 @@ router.get('/medical-records', auth, async (req, res) => {
   }
 });
 
-router.post('/medical-records', auth, async (req, res) => {
+router.post('/medical-records', auth,validate(createMedicalRecordSchema), async (req, res) => {
   try {
     const { patientId, appointmentId, voiceTranscription, soapNotes, diagnosis, prescription } = req.body;
     
@@ -108,7 +112,7 @@ router.get('/symptoms', auth, async (req, res) => {
   }
 });
 
-router.post('/symptoms', auth, async (req, res) => {
+router.post('/symptoms', auth,validate(createSymptomSchema), async (req, res) => {
   try {
     const { symptomsText } = req.body;
 
