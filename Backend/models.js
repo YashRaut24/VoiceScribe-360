@@ -7,9 +7,18 @@ const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   phone: String,
-  specialization: { type: String, function() { return this.userType === 'doctor'; } },
-  licenseNumber: { type: String, function() { return this.userType === 'doctor'; } },
-  dateOfBirth: { type: Date, function() { return this.userType === 'patient'; } },
+  specialization: {
+      type: String,
+      required: function () { return this.userType === 'doctor'; }
+  },
+  licenseNumber: {
+      type: String,
+      required: function () { return this.userType === 'doctor'; }
+  },
+  dateOfBirth: {
+      type: Date,
+      required: function () { return this.userType === 'patient'; }
+  },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -20,8 +29,11 @@ const appointmentSchema = new mongoose.Schema({
   duration: { type: Number, default: 30 },
   status: { type: String, enum: ['scheduled', 'completed', 'cancelled'], default: 'scheduled' },
   notes: String,
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
+
+appointmentSchema.index({ doctorId: 1, date: 1 });
+appointmentSchema.index({ patientId: 1, date: 1 });
 
 const medicalRecordSchema = new mongoose.Schema({
   patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -40,12 +52,16 @@ const medicalRecordSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+medicalRecordSchema.index({ doctorId: 1, createdAt: -1 });
+medicalRecordSchema.index({ patientId: 1, createdAt: -1 });
+
 const loginSessionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   loginTime: { type: Date, default: Date.now },
   ipAddress: String,
   userAgent: String
 });
+loginSessionSchema.index({ userId: 1, loginTime: -1 });
 
 const symptomLogSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -75,6 +91,7 @@ const SymptomLogSchema1 = new mongoose.Schema({
     default: Date.now
   }
 });
+SymptomLogSchema1.index({ userId: 1, createdAt: -1 });
 
 module.exports = {
   User: mongoose.model('User', userSchema),
