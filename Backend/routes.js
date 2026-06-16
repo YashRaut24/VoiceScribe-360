@@ -27,13 +27,18 @@ router.get('/appointments', auth, async (req, res, next) => {
   }
 });
 
-router.post('/appointments', auth,requireRole('patient'), validate(createAppointmentSchema), async (req, res, next) => {
+router.post('/appointments', auth, requireRole('patient'), validate(createAppointmentSchema), async (req, res, next) => {
   try {
-    const { doctorId, patientId, date, duration, notes } = req.body;
-    
+    const { doctorId, date, duration, notes } = req.body;
+
+    const doctor = await User.findOne({ _id: doctorId, userType: 'doctor' });
+    if (!doctor) {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+
     const appointment = new Appointment({
       doctorId,
-      patientId,
+      patientId: req.user.userId,
       date,
       duration,
       notes
@@ -66,10 +71,15 @@ router.get('/medical-records', auth,  async (req, res, next) => {
   }
 });
 
-router.post('/medical-records', auth,requireRole('doctor'), validate(createMedicalRecordSchema), async (req, res, next) => {
+router.post('/medical-records', auth, requireRole('doctor'), validate(createMedicalRecordSchema), async (req, res, next) => {
   try {
     const { patientId, appointmentId, voiceTranscription, soapNotes, diagnosis, prescription } = req.body;
-    
+
+    const patient = await User.findOne({ _id: patientId, userType: 'patient' });
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
     const record = new MedicalRecord({
       patientId,
       doctorId: req.user.userId,
@@ -79,7 +89,6 @@ router.post('/medical-records', auth,requireRole('doctor'), validate(createMedic
       diagnosis,
       prescription
     });
-    
     await record.save();
     await record.populate('patientId', 'firstName lastName');
     
