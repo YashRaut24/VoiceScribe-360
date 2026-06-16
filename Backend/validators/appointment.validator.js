@@ -4,7 +4,6 @@ const objectId = Joi.string().pattern(/^[a-fA-F0-9]{24}$/).message('Must be a va
 
 const createAppointmentSchema = Joi.object({
     doctorId: objectId.required(),
-    patientId: objectId.required(),
     date: Joi.date().greater('now').required().messages({
         'date.greater': 'Appointment date must be in the future',
         'any.required': 'Appointment date is required'
