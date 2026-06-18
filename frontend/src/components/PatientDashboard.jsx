@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, ArrowRight, FileText, Stethoscope, Activity, Shield, Lock, Heart, Calendar  } from 'lucide-react';
+import { User, ArrowRight, FileText, Stethoscope, Activity, Shield, Lock, Heart } from 'lucide-react';
 import './PatientDashboard.css';
 
 const PatientDashboard = () => {
@@ -59,9 +59,8 @@ const PatientDashboard = () => {
                 Begin Symptom Logging
               </button>
               <button className="journey-action journey-action-secondary" onClick={handleBookAppointment}>
-                  <Calendar size={16} />
-                  Book Appointment
-              </button>
+    Book Appointment
+</button>
             </div>
 
             <div className="journey-card">
