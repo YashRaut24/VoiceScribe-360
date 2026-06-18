@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, ArrowRight, FileText, Stethoscope, Activity, Shield, Lock, Heart } from 'lucide-react';
+import { User, ArrowRight, FileText, Stethoscope, Activity, Shield, Lock, Heart, Calendar  } from 'lucide-react';
 import './PatientDashboard.css';
 
 const PatientDashboard = () => {
@@ -8,6 +8,10 @@ const PatientDashboard = () => {
  
   const handleStartLogging = () => {
     navigate('/patient/log-symptoms');
+  };
+
+  const handleBookAppointment = () => {
+      navigate('/patient/book-appointment');
   };
 
   return (
@@ -53,6 +57,10 @@ const PatientDashboard = () => {
               </p>
               <button className="journey-action" onClick={handleStartLogging}>
                 Begin Symptom Logging
+              </button>
+              <button className="journey-action journey-action-secondary" onClick={handleBookAppointment}>
+                  <Calendar size={16} />
+                  Book Appointment
               </button>
             </div>
 
