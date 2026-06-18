@@ -32,10 +32,12 @@ class ApiService {
     try {
       const response = await fetch(url, config);
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Something went wrong');
-      }
+    
+     if (!response.ok) {
+        const err = new Error(data.message || 'Something went wrong');
+        err.errors = data.errors || [];
+        throw err;
+    }
 
       return data;
     } catch (error) {
