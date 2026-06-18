@@ -8,6 +8,7 @@ import DoctorDashboard from './components/DoctorDashboard';
 import PatientDashboard from './components/PatientDashboard';
 import SymptomLogging from './components/SymptomLogging';
 import ProtectedRoute from './components/ProtectedRoute';
+import AppointmentBooking from './components/AppointmentBooking';
 
 function App() {
   return (
@@ -33,6 +34,12 @@ function App() {
           <Route path="/patient/log-symptoms" element={
             <ProtectedRoute userType="patient">
               <SymptomLogging />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/patient/book-appointment" element={
+            <ProtectedRoute userType="patient">
+                <AppointmentBooking />
             </ProtectedRoute>
           } />
           
