@@ -1,11 +1,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, ArrowRight, FileText, Stethoscope, Activity, Shield, Lock, Heart } from 'lucide-react';
+import { User, ArrowRight, FileText, Stethoscope, Activity, Shield, Lock, Heart, LogOut } from 'lucide-react';
 import './PatientDashboard.css';
+import { useAuth } from '../contexts/useAuth';
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
  
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+      logout();
+      navigate('/');
+  };
+
   const handleStartLogging = () => {
     navigate('/patient/log-symptoms');
   };
@@ -17,15 +25,32 @@ const PatientDashboard = () => {
   return (
     <div className="patient-dashboard">
       
-      <nav className="dashboard-navbar">
+     <nav className="dashboard-navbar">
         <div className="dashboard-navbar-content">
-          <div className="dashboard-logo">
-            <span>MedScribe 360</span>
+            <div className="dashboard-logo">
+                <span>MedScribe 360</span>
+            </div>
+            <div className="dashboard-profile" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <User />
+                <button
+                    onClick={handleLogout}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem 1rem',
+                        backgroundColor: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '0.5rem',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <LogOut size={16} />
+                    Logout
+                </button>
+            </div>
           </div>
-          <div className="dashboard-profile">
-            <User />
-          </div>
-        </div>
       </nav>
 
       
