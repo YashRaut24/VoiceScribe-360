@@ -409,6 +409,60 @@ const DoctorDashboard = () => {
           </div>
         )}
 
+        {activeTab === 'appointments' && (
+          <div>
+            <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem' }}>Appointments</h2>
+
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '0.5rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              overflow: 'hidden'
+            }}>
+              {appointments.length === 0 ? (
+                <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                  <Calendar size={48} style={{ margin: '0 auto 1rem' }} />
+                  <p>No appointments scheduled</p>
+                </div>
+              ) : (
+                appointments.map((appointment, index) => (
+                  <div key={appointment._id} style={{
+                    padding: '1.5rem',
+                    borderBottom: index < appointments.length - 1 ? '1px solid #e2e8f0' : 'none',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <div>
+                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: '600' }}>
+                        {appointment.patientId?.firstName} {appointment.patientId?.lastName}
+                      </h4>
+                      <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>
+                        {formatDate(appointment.date)} • {appointment.duration} min
+                      </p>
+                      {appointment.notes && (
+                        <p style={{ margin: '0.5rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
+                          {appointment.notes}
+                        </p>
+                      )}
+                    </div>
+                    <span style={{
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      backgroundColor: appointment.status === 'scheduled' ? '#dbeafe' : appointment.status === 'completed' ? '#d1fae5' : '#fee2e2',
+                      color: appointment.status === 'scheduled' ? '#1e40af' : appointment.status === 'completed' ? '#065f46' : '#991b1b'
+                    }}>
+                      {appointment.status}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'records' && (
           <div>
             <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem' }}>Medical Records</h2>
