@@ -32,7 +32,9 @@ const DoctorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [currentConsultation, setCurrentConsultation] = useState(null);
   const [transcription, setTranscription] = useState('');
-
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [patients, setPatients] = useState([]);
+  const [selectedPatientId, setSelectedPatientId] = useState('');
   useEffect(() => {
     loadData();
   }, []);
@@ -49,18 +51,20 @@ const DoctorDashboard = () => {
 
   const loadData = async () => {
     try {
-      const [appointmentsData, recordsData] = await Promise.all([
-        apiService.getAppointments(),
-        apiService.getMedicalRecords()
-      ]);
-      setAppointments(appointmentsData);
-      setMedicalRecords(recordsData);
+        const [appointmentsData, recordsData, patientsData] = await Promise.all([
+            apiService.getAppointments(),
+            apiService.getMedicalRecords(),
+            apiService.getPatients()
+        ]);
+        setAppointments(appointmentsData);
+        setMedicalRecords(recordsData);
+        setPatients(patientsData);
     } catch (error) {
-      console.error('Error loading data:', error);
+        console.error('Error loading data:', error);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   const handleLogout = () => {
     logout();
@@ -77,30 +81,32 @@ const DoctorDashboard = () => {
   };
 
   const stopRecording = async () => {
-    setIsRecording(false);
-    
-    const mockRecord = {
-      patientId: '507f1f77bcf86cd799439011',
-      voiceTranscription: transcription + ' [Recording stopped at ' + formatTime(recordingTime) + ']',
-      soapNotes: {
-        subjective: 'Patient reports persistent headache for 3 days with mild nausea',
-        objective: 'Patient appears alert, vital signs stable',
-        assessment: 'Tension headache, likely stress-related',
-        plan: 'Prescribe mild analgesic, recommend rest and hydration'
-      },
-      diagnosis: 'Tension Headache (G44.2)',
-      prescription: 'Ibuprofen 400mg, take twice daily with food for 3 days'
-    };
+      setIsRecording(false);
+      
+      const mockRecord = {
+          patientId: selectedPatientId,
+          voiceTranscription: transcription + ' [Recording stopped at ' + formatTime(recordingTime) + ']',
+          soapNotes: {
+              subjective: 'Patient reports persistent headache for 3 days with mild nausea',
+              objective: 'Patient appears alert, vital signs stable',
+              assessment: 'Tension headache, likely stress-related',
+              plan: 'Prescribe mild analgesic, recommend rest and hydration'
+          },
+          diagnosis: 'Tension Headache (G44.2)',
+          prescription: 'Ibuprofen 400mg, take twice daily with food for 3 days'
+      };
 
-    try {
-      await apiService.createMedicalRecord(mockRecord);
-      loadData();
-      setCurrentConsultation(null);
-      setTranscription('');
-      setRecordingTime(0);
-    } catch (error) {
-      console.error('Error saving record:', error);
-    }
+      try {
+          await apiService.createMedicalRecord(mockRecord);
+          loadData();
+          setCurrentConsultation(null);
+          setTranscription('');
+          setRecordingTime(0);
+          setSelectedPatientId('');
+      } catch (error) {
+          console.error('Error saving record:', error);
+          alert('Failed to save medical record: ' + error.message);
+      }
   };
 
   const formatTime = (seconds) => {
@@ -314,22 +320,53 @@ const DoctorDashboard = () => {
                 textAlign: 'center'
               }}>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem' }}>Voice Recording</h3>
-                
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem' }}>Voice Recording</h3>
+
+              <div style={{ marginBottom: '2rem', textAlign: 'left' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                      Select Patient
+                  </label>
+                  <select
+                      value={selectedPatientId}
+                      onChange={(e) => setSelectedPatientId(e.target.value)}
+                      disabled={isRecording}
+                      style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          borderRadius: '0.375rem',
+                          border: '1px solid #e2e8f0'
+                      }}
+                  >
+                      <option value="">-- Choose a patient --</option>
+                      {patients.map(patient => (
+                          <option key={patient._id} value={patient._id}>
+                              {patient.firstName} {patient.lastName} ({patient.email})
+                          </option>
+                      ))}
+                  </select>
+              </div>
+
                 <div style={{
-                  width: '120px',
-                  height: '120px',
-                  borderRadius: '50%',
-                  backgroundColor: isRecording ? '#ef4444' : '#3b82f6',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 2rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
+                    width: '120px',
+                    height: '120px',
+                    borderRadius: '50%',
+                    backgroundColor: isRecording ? '#ef4444' : (!selectedPatientId ? '#94a3b8' : '#3b82f6'),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 2rem',
+                    cursor: (!selectedPatientId && !isRecording) ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease'
                 }}
-                onClick={isRecording ? stopRecording : startRecording}
+                onClick={() => {
+                    if (isRecording) {
+                        stopRecording();
+                    } else if (selectedPatientId) {
+                        startRecording();
+                    }
+                }}
                 >
-                  {isRecording ? <Square size={40} color="white" /> : <Mic size={40} color="white" />}
+                                  {isRecording ? <Square size={40} color="white" /> : <Mic size={40} color="white" />}
                 </div>
                 
                 <div style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
@@ -341,21 +378,22 @@ const DoctorDashboard = () => {
                 </p>
                 
                 <button
-                  onClick={isRecording ? stopRecording : startRecording}
-                  style={{
-                    padding: '0.75rem 2rem',
-                    backgroundColor: isRecording ? '#ef4444' : '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '0.5rem',
-                    fontSize: '1rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    margin: '0 auto'
-                  }}
-                >
+                    onClick={isRecording ? stopRecording : startRecording}
+                    disabled={!isRecording && !selectedPatientId}
+                    style={{
+                        padding: '0.75rem 2rem',
+                        backgroundColor: isRecording ? '#ef4444' : (!selectedPatientId ? '#94a3b8' : '#3b82f6'),
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '0.5rem',
+                        fontSize: '1rem',
+                        cursor: (!selectedPatientId && !isRecording) ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        margin: '0 auto'
+                    }}
+                  >
                   {isRecording ? (
                     <>
                       <Square size={16} />
@@ -493,14 +531,16 @@ const DoctorDashboard = () => {
                           {formatDate(record.createdAt)}
                         </p>
                       </div>
-                      <button style={{
-                        padding: '0.5rem 1rem',
-                        backgroundColor: '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '0.25rem',
-                        cursor: 'pointer',
-                        fontSize: '0.875rem'
+                      <button
+                        onClick={() => setSelectedRecord(record)}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '0.25rem',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem'
                       }}>
                         View Details
                       </button>
@@ -517,10 +557,90 @@ const DoctorDashboard = () => {
               )}
             </div>
           </div>
-        )}
+       )}
       </div>
+
+      {selectedRecord && (
+        <div
+          onClick={() => setSelectedRecord(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '0.5rem',
+              padding: '2rem',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '85vh',
+              overflowY: 'auto'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>
+                {selectedRecord.diagnosis || 'General Consultation'}
+              </h2>
+              <button
+                onClick={() => setSelectedRecord(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  lineHeight: 1
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
+              Patient: {selectedRecord.patientId?.firstName} {selectedRecord.patientId?.lastName} • {formatDate(selectedRecord.createdAt)}
+            </p>
+
+            {selectedRecord.voiceTranscription && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h4 style={{ marginBottom: '0.5rem' }}>Voice Transcription</h4>
+                <p style={{ color: '#475569', fontSize: '0.9rem', backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.375rem' }}>
+                  {selectedRecord.voiceTranscription}
+                </p>
+              </div>
+            )}
+
+            {selectedRecord.soapNotes && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h4 style={{ marginBottom: '0.5rem' }}>SOAP Notes</h4>
+                <p style={{ marginBottom: '0.5rem' }}><strong>Subjective:</strong> {selectedRecord.soapNotes.subjective}</p>
+                <p style={{ marginBottom: '0.5rem' }}><strong>Objective:</strong> {selectedRecord.soapNotes.objective}</p>
+                <p style={{ marginBottom: '0.5rem' }}><strong>Assessment:</strong> {selectedRecord.soapNotes.assessment}</p>
+                <p style={{ marginBottom: '0.5rem' }}><strong>Plan:</strong> {selectedRecord.soapNotes.plan}</p>
+              </div>
+            )}
+
+            {selectedRecord.prescription && (
+              <div>
+                <h4 style={{ marginBottom: '0.5rem' }}>Prescription</h4>
+                <p style={{ color: '#475569' }}>{selectedRecord.prescription}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
 export default DoctorDashboard;
