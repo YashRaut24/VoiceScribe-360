@@ -29,20 +29,16 @@ class ApiService {
       config.headers.Authorization = `Bearer ${this.token}`;
     }
 
-    try {
-      const response = await fetch(url, config);
-      const data = await response.json();
-    
-     if (!response.ok) {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
         const err = new Error(data.message || 'Something went wrong');
         err.errors = data.errors || [];
         throw err;
     }
 
-      return data;
-    } catch (error) {
-      throw error;
-    }
+    return data;
   }
 
   // Auth methods
@@ -99,6 +95,11 @@ class ApiService {
   // Doctors
   async getDoctors() {
     return this.request('/doctors');
+  }
+
+  // Patients
+  async getPatients() {
+      return this.request('/patients');
   }
 
   // Symptoms
