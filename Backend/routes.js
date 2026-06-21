@@ -110,6 +110,18 @@ router.get('/doctors', auth,requireRole('patient'), async (req, res, next) => {
   }
 });
 
+router.get('/patients', auth, requireRole('doctor'), async (req, res, next) => {
+  try {
+    const patients = await User.find({ userType: 'patient' })
+      .select('firstName lastName email')
+      .sort({ firstName: 1 });
+
+    res.json(patients);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/symptoms', auth, requireRole('patient'), async (req, res, next) => {
   try {
     const symptomLogs = await SymptomLogDoctor.find({ userId: req.user.userId })
