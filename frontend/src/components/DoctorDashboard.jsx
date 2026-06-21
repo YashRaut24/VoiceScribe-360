@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Mic, 
@@ -35,6 +35,10 @@ const DoctorDashboard = () => {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [patients, setPatients] = useState([]);
   const [selectedPatientId, setSelectedPatientId] = useState('');
+  const [audioURL, setAudioURL] = useState(null);
+  const [micError, setMicError] = useState('');
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
   useEffect(() => {
     loadData();
   }, []);
@@ -71,19 +75,47 @@ const DoctorDashboard = () => {
     navigate('/');
   };
 
-  const startRecording = () => {
-    setIsRecording(true);
-    setRecordingTime(0);
-    setTranscription('');
-    setTimeout(() => {
-      setTranscription('Patient reports headache for the past 3 days, accompanied by mild nausea...');
-    }, 3000);
+  const startRecording = async () => {
+      setMicError('');
+      setAudioURL(null);
+      audioChunksRef.current = [];
+
+      try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+          const mediaRecorder = new MediaRecorder(stream);
+          mediaRecorderRef.current = mediaRecorder;
+
+          mediaRecorder.ondataavailable = (event) => {
+              if (event.data.size > 0) {
+                  audioChunksRef.current.push(event.data);
+              }
+          };
+
+          mediaRecorder.onstop = () => {
+              const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+              const url = URL.createObjectURL(audioBlob);
+              setAudioURL(url);
+
+              stream.getTracks().forEach(track => track.stop());
+          };
+
+          mediaRecorder.start();
+          setIsRecording(true);
+          setRecordingTime(0);
+      } catch (error) {
+          console.error('Microphone access error:', error);
+          setMicError('Microphone access was denied or is unavailable. Please allow microphone permissions and try again.');
+      }
   };
 
   const stopRecording = async () => {
-      setIsRecording(false);
-      
-      const mockRecord = {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+    
+    const mockRecord = {
           patientId: selectedPatientId,
           voiceTranscription: transcription + ' [Recording stopped at ' + formatTime(recordingTime) + ']',
           soapNotes: {
@@ -319,7 +351,7 @@ const DoctorDashboard = () => {
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 textAlign: 'center'
               }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem' }}>Voice Recording</h3>
+
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem' }}>Voice Recording</h3>
 
               <div style={{ marginBottom: '2rem', textAlign: 'left' }}>
@@ -376,6 +408,22 @@ const DoctorDashboard = () => {
                 <p style={{ color: '#64748b', marginBottom: '2rem' }}>
                   {isRecording ? 'Recording in progress...' : 'Click to start consultation recording'}
                 </p>
+
+                <p style={{ color: '#64748b', marginBottom: '2rem' }}>
+                    {isRecording ? 'Recording in progress...' : 'Click to start consultation recording'}
+                </p>
+
+                {micError && (
+                    <p style={{ color: '#ef4444', marginBottom: '1rem', fontSize: '0.875rem' }}>
+                        {micError}
+                    </p>
+                )}
+
+                {audioURL && !isRecording && (
+                    <div style={{ marginBottom: '2rem' }}>
+                        <audio controls src={audioURL} style={{ width: '100%' }} />
+                    </div>
+                )}
                 
                 <button
                     onClick={isRecording ? stopRecording : startRecording}
