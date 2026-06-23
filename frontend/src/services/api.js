@@ -102,6 +102,31 @@ class ApiService {
       return this.request('/patients');
   }
 
+  // Audio
+  async uploadAudio(audioBlob) {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'consultation.webm');
+
+      const url = `${API_BASE_URL}/upload-audio`;
+      const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+              Authorization: `Bearer ${this.token}`
+          },
+          body: formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+          const err = new Error(data.message || 'Audio upload failed');
+          err.errors = data.errors || [];
+          throw err;
+      }
+
+      return data;
+  }
+
   // Symptoms
   async getSymptoms() {
     return this.request('/symptoms');
