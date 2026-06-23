@@ -13,7 +13,8 @@ const createMedicalRecordSchema = Joi.object({
         plan: Joi.string().trim().max(2000).optional().allow('')
     }).optional(),
     diagnosis: Joi.string().trim().max(1000).optional().allow(''),
-    prescription: Joi.string().trim().max(1000).optional().allow('')
+    prescription: Joi.string().trim().max(1000).optional().allow(''),
+    audioFileUrl: Joi.string().optional().allow(null, '')
 });
 
 module.exports = { createMedicalRecordSchema };
