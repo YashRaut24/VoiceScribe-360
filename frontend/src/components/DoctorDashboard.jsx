@@ -109,37 +109,65 @@ const DoctorDashboard = () => {
       }
   };
 
-  const stopRecording = async () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-    }
+const stopRecording = async () => {
     setIsRecording(false);
-    
-    const mockRecord = {
-          patientId: selectedPatientId,
-          voiceTranscription: transcription + ' [Recording stopped at ' + formatTime(recordingTime) + ']',
-          soapNotes: {
-              subjective: 'Patient reports persistent headache for 3 days with mild nausea',
-              objective: 'Patient appears alert, vital signs stable',
-              assessment: 'Tension headache, likely stress-related',
-              plan: 'Prescribe mild analgesic, recommend rest and hydration'
-          },
-          diagnosis: 'Tension Headache (G44.2)',
-          prescription: 'Ibuprofen 400mg, take twice daily with food for 3 days'
-      };
 
-      try {
-          await apiService.createMedicalRecord(mockRecord);
-          loadData();
-          setCurrentConsultation(null);
-          setTranscription('');
-          setRecordingTime(0);
-          setSelectedPatientId('');
-      } catch (error) {
-          console.error('Error saving record:', error);
-          alert('Failed to save medical record: ' + error.message);
-      }
-  };
+    let audioUrl = null;
+
+    try {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            audioUrl = await new Promise((resolve) => {
+                mediaRecorderRef.current.onstop = async () => {
+                    try {
+                        if (audioChunksRef.current.length > 0) {
+                            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                            const url = URL.createObjectURL(audioBlob);
+                            setAudioURL(url);
+                            const uploadResponse = await apiService.uploadAudio(audioBlob);
+                            resolve(uploadResponse.audioUrl);
+                        } else {
+                            resolve(null);
+                        }
+                    } catch (uploadError) {
+                        console.error('Audio upload failed:', uploadError);
+                        resolve(null);
+                    }
+                };
+                mediaRecorderRef.current.stop();
+            });
+        }
+    } catch (error) {
+        console.error('Recording stop error:', error);
+    }
+
+
+    const mockRecord = {
+        patientId: selectedPatientId,
+        voiceTranscription: `Consultation recording - ${formatTime(recordingTime)} duration`,
+        soapNotes: {
+            subjective: 'Patient reports persistent headache for 3 days with mild nausea',
+            objective: 'Patient appears alert, vital signs stable',
+            assessment: 'Tension headache, likely stress-related',
+            plan: 'Prescribe mild analgesic, recommend rest and hydration'
+        },
+        diagnosis: 'Tension Headache (G44.2)',
+        prescription: 'Ibuprofen 400mg, take twice daily with food for 3 days',
+        audioFileUrl: audioUrl
+    };
+
+    try {
+        await apiService.createMedicalRecord(mockRecord);
+        loadData();
+        setCurrentConsultation(null);
+        setTranscription('');
+        setRecordingTime(0);
+        setSelectedPatientId('');
+        setAudioURL(null);
+    } catch (error) {
+        console.error('Error saving record:', error);
+        alert('Failed to save medical record: ' + error.message);
+    }
+};
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
