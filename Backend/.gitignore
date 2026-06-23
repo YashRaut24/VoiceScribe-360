@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 .env
+
+# Audio uploads
+uploads/*
+!uploads/.gitkeep
