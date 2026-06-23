@@ -7,6 +7,7 @@ const { createAppointmentSchema } = require('./validators/appointment.validator'
 const { createMedicalRecordSchema } = require('./validators/medicalRecord.validator');
 const { createSymptomSchema } = require('./validators/symptom.validator');
 const requireRole = require('./middleware/role.middleware');
+const upload = require('./middleware/upload.middleware');
 
 const router = express.Router();
 
@@ -73,21 +74,21 @@ router.get('/medical-records', auth,  async (req, res, next) => {
 
 router.post('/medical-records', auth, requireRole('doctor'), validate(createMedicalRecordSchema), async (req, res, next) => {
   try {
-    const { patientId, appointmentId, voiceTranscription, soapNotes, diagnosis, prescription } = req.body;
-
+    const { patientId, appointmentId, voiceTranscription, soapNotes, diagnosis, prescription, audioFileUrl } = req.body;
     const patient = await User.findOne({ _id: patientId, userType: 'patient' });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
 
     const record = new MedicalRecord({
-      patientId,
-      doctorId: req.user.userId,
-      appointmentId,
-      voiceTranscription,
-      soapNotes,
-      diagnosis,
-      prescription
+        patientId,
+        doctorId: req.user.userId,
+        appointmentId,
+        voiceTranscription,
+        soapNotes,
+        diagnosis,
+        prescription,
+        audioFileUrl
     });
     await record.save();
     await record.populate('patientId', 'firstName lastName');
@@ -96,6 +97,24 @@ router.post('/medical-records', auth, requireRole('doctor'), validate(createMedi
   } catch (error) {
     next(error);
   }
+});
+
+router.post('/upload-audio', auth, requireRole('doctor'), upload.single('audio'), async (req, res, next) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No audio file uploaded' });
+        }
+
+        const audioUrl = `/uploads/${req.file.filename}`;
+
+        res.status(201).json({
+            audioUrl,
+            filename: req.file.filename,
+            size: req.file.size
+        });
+    } catch (error) {
+        next(error);
+    }
 });
 
 router.get('/doctors', auth,requireRole('patient'), async (req, res, next) => {
