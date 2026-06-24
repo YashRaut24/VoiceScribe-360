@@ -127,6 +127,14 @@ class ApiService {
       return data;
   }
 
+  // SOAP Notes
+  async generateSoap(transcript) {
+      return this.request('/generate-soap', {
+          method: 'POST',
+          body: JSON.stringify({ transcript })
+      });
+  }
+
   // Symptoms
   async getSymptoms() {
     return this.request('/symptoms');
