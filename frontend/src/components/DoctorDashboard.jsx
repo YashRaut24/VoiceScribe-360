@@ -185,17 +185,30 @@ const DoctorDashboard = () => {
       }
 
 
+      let soapNotes = {
+        subjective: '',
+        objective: '',
+        assessment: '',
+        plan: ''
+      };
+
+      const currentTranscript = transcriptRef.current;
+
+      if (currentTranscript && currentTranscript.trim()) {
+          try {
+              const soapResponse = await apiService.generateSoap(currentTranscript);
+              soapNotes = soapResponse.soapNotes;
+          } catch (soapError) {
+              console.error('SOAP generation failed:', soapError);
+          }
+      }
+
       const mockRecord = {
           patientId: selectedPatientId,
-          voiceTranscription: transcriptRef.current || `Consultation recording - ${formatTime(recordingTime)} duration`,
-          soapNotes: {
-              subjective: 'Patient reports persistent headache for 3 days with mild nausea',
-              objective: 'Patient appears alert, vital signs stable',
-              assessment: 'Tension headache, likely stress-related',
-              plan: 'Prescribe mild analgesic, recommend rest and hydration'
-          },
-          diagnosis: 'Tension Headache (G44.2)',
-          prescription: 'Ibuprofen 400mg, take twice daily with food for 3 days',
+          voiceTranscription: currentTranscript || `Consultation recording - ${formatTime(recordingTime)} duration`,
+          soapNotes,
+          diagnosis: '',
+          prescription: '',
           audioFileUrl: audioUrl
       };
 
