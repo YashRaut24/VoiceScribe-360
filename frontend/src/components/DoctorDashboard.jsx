@@ -39,6 +39,11 @@ const DoctorDashboard = () => {
   const [micError, setMicError] = useState('');
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const recognitionRef = useRef(null);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  const transcriptRef = useRef('');
+
+
   useEffect(() => {
     loadData();
   }, []);
@@ -52,6 +57,12 @@ const DoctorDashboard = () => {
     }
     return () => clearInterval(interval);
   }, [isRecording]);
+
+  useEffect(() => {
+      if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
+          setSpeechSupported(false);
+      }
+  }, []);
 
   const loadData = async () => {
     try {
@@ -73,11 +84,12 @@ const DoctorDashboard = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
-  };
+  };  
 
   const startRecording = async () => {
       setMicError('');
       setAudioURL(null);
+      setTranscription('');
       audioChunksRef.current = [];
 
       try {
@@ -92,82 +104,115 @@ const DoctorDashboard = () => {
               }
           };
 
-          mediaRecorder.onstop = () => {
-              const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-              const url = URL.createObjectURL(audioBlob);
-              setAudioURL(url);
-
-              stream.getTracks().forEach(track => track.stop());
-          };
-
           mediaRecorder.start();
           setIsRecording(true);
           setRecordingTime(0);
+
+          if (speechSupported) {
+              const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+              const recognition = new SpeechRecognition();
+              recognitionRef.current = recognition;
+
+              recognition.continuous = true;
+              recognition.interimResults = true;
+              recognition.lang = 'en-US';
+
+              let finalTranscript = '';
+
+             recognition.onresult = (event) => {
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                transcriptRef.current = finalTranscript;
+                setTranscription(finalTranscript + interimTranscript);
+            };
+
+              recognition.onerror = (event) => {
+                  console.error('Speech recognition error:', event.error);
+              };
+
+              recognition.start();
+          }
+
       } catch (error) {
           console.error('Microphone access error:', error);
           setMicError('Microphone access was denied or is unavailable. Please allow microphone permissions and try again.');
       }
   };
 
-const stopRecording = async () => {
-    setIsRecording(false);
+  const stopRecording = async () => {
+      setIsRecording(false);
+      
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
 
-    let audioUrl = null;
+      let audioUrl = null;
 
-    try {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            audioUrl = await new Promise((resolve) => {
-                mediaRecorderRef.current.onstop = async () => {
-                    try {
-                        if (audioChunksRef.current.length > 0) {
-                            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                            const url = URL.createObjectURL(audioBlob);
-                            setAudioURL(url);
-                            const uploadResponse = await apiService.uploadAudio(audioBlob);
-                            resolve(uploadResponse.audioUrl);
-                        } else {
-                            resolve(null);
-                        }
-                    } catch (uploadError) {
-                        console.error('Audio upload failed:', uploadError);
-                        resolve(null);
-                    }
-                };
-                mediaRecorderRef.current.stop();
-            });
-        }
-    } catch (error) {
-        console.error('Recording stop error:', error);
-    }
+      try {
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+              audioUrl = await new Promise((resolve) => {
+                  mediaRecorderRef.current.onstop = async () => {
+                      try {
+                          if (audioChunksRef.current.length > 0) {
+                              const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                              const url = URL.createObjectURL(audioBlob);
+                              setAudioURL(url);
+                              const uploadResponse = await apiService.uploadAudio(audioBlob);
+                              resolve(uploadResponse.audioUrl);
+                          } else {
+                              resolve(null);
+                          }
+                      } catch (uploadError) {
+                          console.error('Audio upload failed:', uploadError);
+                          resolve(null);
+                      }
+                  };
+                  mediaRecorderRef.current.stop();
+              });
+          }
+      } catch (error) {
+          console.error('Recording stop error:', error);
+      }
 
 
-    const mockRecord = {
-        patientId: selectedPatientId,
-        voiceTranscription: `Consultation recording - ${formatTime(recordingTime)} duration`,
-        soapNotes: {
-            subjective: 'Patient reports persistent headache for 3 days with mild nausea',
-            objective: 'Patient appears alert, vital signs stable',
-            assessment: 'Tension headache, likely stress-related',
-            plan: 'Prescribe mild analgesic, recommend rest and hydration'
-        },
-        diagnosis: 'Tension Headache (G44.2)',
-        prescription: 'Ibuprofen 400mg, take twice daily with food for 3 days',
-        audioFileUrl: audioUrl
-    };
+      const mockRecord = {
+          patientId: selectedPatientId,
+          voiceTranscription: transcriptRef.current || `Consultation recording - ${formatTime(recordingTime)} duration`,
+          soapNotes: {
+              subjective: 'Patient reports persistent headache for 3 days with mild nausea',
+              objective: 'Patient appears alert, vital signs stable',
+              assessment: 'Tension headache, likely stress-related',
+              plan: 'Prescribe mild analgesic, recommend rest and hydration'
+          },
+          diagnosis: 'Tension Headache (G44.2)',
+          prescription: 'Ibuprofen 400mg, take twice daily with food for 3 days',
+          audioFileUrl: audioUrl
+      };
 
-    try {
-        await apiService.createMedicalRecord(mockRecord);
-        loadData();
-        setCurrentConsultation(null);
-        setTranscription('');
-        setRecordingTime(0);
-        setSelectedPatientId('');
-        setAudioURL(null);
-    } catch (error) {
-        console.error('Error saving record:', error);
-        alert('Failed to save medical record: ' + error.message);
-    }
-};
+      try {
+          await apiService.createMedicalRecord(mockRecord);
+          loadData();
+          setCurrentConsultation(null);
+          setTranscription('');
+          transcriptRef.current = '';
+          setRecordingTime(0);
+          setSelectedPatientId('');
+          setAudioURL(null);
+      } catch (error) {
+          console.error('Error saving record:', error);
+          alert('Failed to save medical record: ' + error.message);
+      }
+  };
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -437,10 +482,6 @@ const stopRecording = async () => {
                   {isRecording ? 'Recording in progress...' : 'Click to start consultation recording'}
                 </p>
 
-                <p style={{ color: '#64748b', marginBottom: '2rem' }}>
-                    {isRecording ? 'Recording in progress...' : 'Click to start consultation recording'}
-                </p>
-
                 {micError && (
                     <p style={{ color: '#ef4444', marginBottom: '1rem', fontSize: '0.875rem' }}>
                         {micError}
@@ -492,7 +533,23 @@ const stopRecording = async () => {
               }}>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem' }}>Live Transcription</h3>
                 
-                <div style={{
+              {!speechSupported && (
+                  <div style={{
+                      padding: '0.75rem',
+                      backgroundColor: '#fef3c7',
+                      border: '1px solid #f59e0b',
+                      borderRadius: '0.375rem',
+                      marginBottom: '1rem',
+                      fontSize: '0.875rem',
+                      color: '#92400e'
+                  }}>
+                      Live transcription is not supported in this browser. 
+                      Please use Chrome or Edge for this feature.
+                      Audio recording still works normally.
+                  </div>
+              )}
+
+              <div style={{
                   minHeight: '200px',
                   padding: '1rem',
                   backgroundColor: '#f8fafc',
@@ -500,9 +557,9 @@ const stopRecording = async () => {
                   border: '1px solid #e2e8f0',
                   fontSize: '1rem',
                   lineHeight: '1.6'
-                }}>
+              }}>
                   {transcription || 'Transcription will appear here when recording starts...'}
-                </div>
+              </div>
                 
                 {transcription && (
                   <div style={{ marginTop: '1rem', textAlign: 'right' }}>
