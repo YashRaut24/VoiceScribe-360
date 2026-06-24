@@ -1,4 +1,4 @@
-from google import genai
+from groq import Groq
 from dotenv import load_dotenv
 import os
 import json
@@ -6,7 +6,7 @@ import re
 
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def run_llm(symptom_text: str):
     prompt = f"""
@@ -34,20 +34,66 @@ Patient input:
 "{symptom_text}"
 """
 
-    print("LLM Prompt:", prompt)
-
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.1
     )
 
-    text = response.text.strip()
-    print("LLM Raw Response:", text)
+    text = response.choices[0].message.content.strip()
 
     if text.startswith("```"):
         text = re.sub(r"^```json\s*|```$", "", text, flags=re.MULTILINE).strip()
 
     parsed = json.loads(text)
+    return parsed
 
-    print("LLM Parsed Response:", parsed)
+
+def generate_soap_notes(transcript: str):
+    prompt = f"""
+You are a clinical documentation assistant.
+
+Based on the following consultation transcript, generate structured SOAP notes.
+
+Rules:
+- Be concise and clinical
+- Only use information from the transcript
+- Do NOT invent symptoms or findings
+- Return ONLY valid JSON
+- Do not include explanation text
+
+JSON format:
+{{
+"subjective": "",
+"objective": "",
+"assessment": "",
+"plan": ""
+}}
+
+Consultation transcript:
+"{transcript}"
+"""
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.1
+    )
+
+    text = response.choices[0].message.content.strip()
+
+    if text.startswith("```"):
+        text = re.sub(r"^```json\s*|```$", "", text, flags=re.MULTILINE).strip()
+
+    parsed = json.loads(text)
     return parsed
