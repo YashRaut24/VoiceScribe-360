@@ -28,3 +28,6 @@ dist-ssr
 # Audio uploads
 uploads/*
 !uploads/.gitkeep
+
+__pycache__/
+*.pyc
