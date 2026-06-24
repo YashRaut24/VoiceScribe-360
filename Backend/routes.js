@@ -117,6 +117,31 @@ router.post('/upload-audio', auth, requireRole('doctor'), upload.single('audio')
     }
 });
 
+router.post('/generate-soap', auth, requireRole('doctor'), async (req, res, next) => {
+    try {
+        const { transcript } = req.body;
+
+        if (!transcript || !transcript.trim()) {
+            return res.status(400).json({ message: 'Transcript is required' });
+        }
+
+        const response = await axios.post('http://localhost:5000/generate-soap', {
+            transcript
+        });
+
+        res.json(response.data);
+
+    } catch (error) {
+        if (error.response?.data) {
+            return res.status(500).json({
+                message: 'SOAP generation failed',
+                details: error.response.data
+            });
+        }
+        next(error);
+    }
+});
+
 router.get('/doctors', auth,requireRole('patient'), async (req, res, next) => {
   try {
     const doctors = await User.find({ userType: 'doctor' })
