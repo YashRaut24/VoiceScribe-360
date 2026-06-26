@@ -9,6 +9,7 @@ import PatientDashboard from './components/PatientDashboard';
 import SymptomLogging from './components/SymptomLogging';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppointmentBooking from './components/AppointmentBooking';
+import PatientTimeline from './components/PatientTimeline';
 
 function App() {
   return (
@@ -42,6 +43,12 @@ function App() {
                 <AppointmentBooking />
             </ProtectedRoute>
           } />
+
+          <Route path="/patient/timeline" element={
+            <ProtectedRoute userType="patient">
+                <PatientTimeline />
+            </ProtectedRoute>
+        } />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
