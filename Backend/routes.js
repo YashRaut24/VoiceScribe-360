@@ -210,4 +210,23 @@ router.post('/symptoms', auth,requireRole('patient'), validate(createSymptomSche
   }
 });
 
+router.delete('/symptoms/:id', auth, requireRole('patient'), async (req, res, next) => {
+    try {
+        const symptomLog = await SymptomLogDoctor.findOne({
+            _id: req.params.id,
+            userId: req.user.userId
+        });
+
+        if (!symptomLog) {
+            return res.status(404).json({ message: 'Symptom log not found' });
+        }
+
+        await SymptomLogDoctor.deleteOne({ _id: req.params.id });
+
+        res.json({ message: 'Symptom log deleted successfully' });
+    } catch (error) {
+        next(error);
+    }
+});
+
 module.exports = router;
