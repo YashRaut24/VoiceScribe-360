@@ -68,6 +68,10 @@ class ApiService {
     return response;
   }
 
+  async verifyToken() {
+    return this.request('/auth/verify');
+  }
+
   // Appointments
   async getAppointments() {
     return this.request('/appointments');
