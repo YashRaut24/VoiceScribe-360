@@ -8,10 +8,10 @@ const { createMedicalRecordSchema } = require('./validators/medicalRecord.valida
 const { createSymptomSchema } = require('./validators/symptom.validator');
 const requireRole = require('./middleware/role.middleware');
 const upload = require('./middleware/upload.middleware');
-
+const audit = require('./middleware/audit.middleware');
 const router = express.Router();
 
-router.get('/appointments', auth, async (req, res, next) => {
+router.get('/appointments', auth, audit('VIEW_APPOINTMENTS', 'Appointment'), async (req, res, next) => {
   try {
     const query = req.user.userType === 'doctor' 
       ? { doctorId: req.user.userId }
@@ -28,8 +28,7 @@ router.get('/appointments', auth, async (req, res, next) => {
   }
 });
 
-router.post('/appointments', auth, requireRole('patient'), validate(createAppointmentSchema), async (req, res, next) => {
-  try {
+router.post('/appointments', auth, requireRole('patient'), audit('CREATE_APPOINTMENT', 'Appointment'), validate(createAppointmentSchema), async (req, res, next) => {  try {
     const { doctorId, date, duration, notes } = req.body;
 
     const doctor = await User.findOne({ _id: doctorId, userType: 'doctor' });
@@ -55,8 +54,7 @@ router.post('/appointments', auth, requireRole('patient'), validate(createAppoin
   }
 });
 
-router.get('/medical-records', auth,  async (req, res, next) => {
-  try {
+router.get('/medical-records', auth, audit('VIEW_MEDICAL_RECORDS', 'MedicalRecord'), async (req, res, next) => {  try {
     const query = req.user.userType === 'doctor' 
       ? { doctorId: req.user.userId }
       : { patientId: req.user.userId };
@@ -72,8 +70,7 @@ router.get('/medical-records', auth,  async (req, res, next) => {
   }
 });
 
-router.post('/medical-records', auth, requireRole('doctor'), validate(createMedicalRecordSchema), async (req, res, next) => {
-  try {
+router.post('/medical-records', auth, requireRole('doctor'), audit('CREATE_MEDICAL_RECORD', 'MedicalRecord'), validate(createMedicalRecordSchema), async (req, res, next) => {  try {
     const { patientId, appointmentId, voiceTranscription, soapNotes, diagnosis, prescription, audioFileUrl } = req.body;
     const patient = await User.findOne({ _id: patientId, userType: 'patient' });
     if (!patient) {
@@ -99,8 +96,7 @@ router.post('/medical-records', auth, requireRole('doctor'), validate(createMedi
   }
 });
 
-router.post('/upload-audio', auth, requireRole('doctor'), upload.single('audio'), async (req, res, next) => {
-    try {
+router.post('/upload-audio', auth, requireRole('doctor'), audit('UPLOAD_AUDIO', 'MedicalRecord'), upload.single('audio'), async (req, res, next) => {    try {
         if (!req.file) {
             return res.status(400).json({ message: 'No audio file uploaded' });
         }
@@ -117,8 +113,7 @@ router.post('/upload-audio', auth, requireRole('doctor'), upload.single('audio')
     }
 });
 
-router.post('/generate-soap', auth, requireRole('doctor'), async (req, res, next) => {
-    try {
+router.post('/generate-soap', auth, requireRole('doctor'), audit('GENERATE_SOAP', 'MedicalRecord'), async (req, res, next) => {    try {
         const { transcript } = req.body;
 
         if (!transcript || !transcript.trim()) {
@@ -166,8 +161,7 @@ router.get('/patients', auth, requireRole('doctor'), async (req, res, next) => {
   }
 });
 
-router.get('/symptoms', auth, requireRole('patient'), async (req, res, next) => {
-  try {
+router.get('/symptoms', auth, requireRole('patient'), audit('VIEW_SYMPTOMS', 'SymptomLog'), async (req, res, next) => {  try {
     const symptomLogs = await SymptomLogDoctor.find({ userId: req.user.userId })
       .select('_id symptomsText structuredData createdAt')
       .sort({ createdAt: -1 });
@@ -178,8 +172,7 @@ router.get('/symptoms', auth, requireRole('patient'), async (req, res, next) => 
   }
 });
 
-router.post('/symptoms', auth,requireRole('patient'), validate(createSymptomSchema), async (req, res, next) => {
-  try {
+router.post('/symptoms', auth, requireRole('patient'), audit('CREATE_SYMPTOM', 'SymptomLog'), validate(createSymptomSchema), async (req, res, next) => {  try {
     const { symptomsText } = req.body;
 
     let structuredData = null;
@@ -210,8 +203,7 @@ router.post('/symptoms', auth,requireRole('patient'), validate(createSymptomSche
   }
 });
 
-router.delete('/symptoms/:id', auth, requireRole('patient'), async (req, res, next) => {
-    try {
+router.delete('/symptoms/:id', auth, requireRole('patient'), audit('DELETE_SYMPTOM', 'SymptomLog'), async (req, res, next) => {    try {
         const symptomLog = await SymptomLogDoctor.findOne({
             _id: req.params.id,
             userId: req.user.userId
