@@ -146,6 +146,12 @@ class ApiService {
       body: JSON.stringify({ symptomsText }),
     });
   }
+
+  async deleteSymptom(id) {
+    return this.request(`/symptoms/${id}`, {
+        method: 'DELETE'
+    });
+}
 }
 
 export default new ApiService();
