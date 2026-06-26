@@ -70,6 +70,17 @@ app.get('/health', (req, res) => {
 });
 
 app.use(errorHandler);
+app.set('trust proxy', 1);
+
+if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        if (req.header('x-forwarded-proto') !== 'https') {
+            return res.redirect(301, `https://${req.header('host')}${req.url}`);
+        }
+        next();
+    });
+}
+app.use(helmet());
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
