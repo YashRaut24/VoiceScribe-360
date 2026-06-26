@@ -91,13 +91,46 @@ const SymptomLogSchema1 = new mongoose.Schema({
     default: Date.now
   }
 });
+
 SymptomLogSchema1.index({ userId: 1, createdAt: -1 });
+const auditLogSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    userType: { type: String, enum: ['doctor', 'patient', 'admin'], required: true },
+    action: {
+        type: String,
+        enum: [
+            'LOGIN',
+            'LOGOUT',
+            'REGISTER',
+            'VIEW_MEDICAL_RECORDS',
+            'CREATE_MEDICAL_RECORD',
+            'VIEW_APPOINTMENTS',
+            'CREATE_APPOINTMENT',
+            'VIEW_SYMPTOMS',
+            'CREATE_SYMPTOM',
+            'DELETE_SYMPTOM',
+            'UPLOAD_AUDIO',
+            'GENERATE_SOAP',
+            'TOKEN_VERIFIED'
+        ],
+        required: true
+    },
+    resourceId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    resourceType: { type: String, default: null },
+    ipAddress: { type: String, default: null },
+    userAgent: { type: String, default: null },
+    createdAt: { type: Date, default: Date.now }
+});
+
+auditLogSchema.index({ userId: 1, createdAt: -1 });
+auditLogSchema.index({ action: 1, createdAt: -1 });
 
 module.exports = {
-  User: mongoose.model('User', userSchema),
-  Appointment: mongoose.model('Appointment', appointmentSchema),
-  MedicalRecord: mongoose.model('MedicalRecord', medicalRecordSchema),
-  LoginSession: mongoose.model('LoginSession', loginSessionSchema),
-  SymptomLog: mongoose.model('SymptomLog', symptomLogSchema),
-  SymptomLogDoctor: mongoose.model('SymptomLogDoctor', SymptomLogSchema1),
+    User: mongoose.model('User', userSchema),
+    Appointment: mongoose.model('Appointment', appointmentSchema),
+    MedicalRecord: mongoose.model('MedicalRecord', medicalRecordSchema),
+    LoginSession: mongoose.model('LoginSession', loginSessionSchema),
+    SymptomLog: mongoose.model('SymptomLog', symptomLogSchema),
+    SymptomLogDoctor: mongoose.model('SymptomLogDoctor', SymptomLogSchema1),
+    AuditLog: mongoose.model('AuditLog', auditLogSchema)
 };
