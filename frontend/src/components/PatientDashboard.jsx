@@ -111,8 +111,8 @@ const PatientDashboard = () => {
               <p className="journey-description">
                 Passively analyze anonymized data. Contribute to early health awareness.
               </p>
-              <button className="journey-action disabled">
-                View Care Summary
+              <button className="journey-action" onClick={() => navigate('/patient/timeline')}>
+                  View My Timeline
               </button>
             </div>
           </div>
