@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+const mongoSanitize = require('express-mongo-sanitize');
 
 const errorHandler = require('./middleware/error.middleware');
 const authRoutes = require('./auth');
@@ -53,6 +54,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(mongoSanitize());
 
 app.use('/uploads', express.static('uploads'));
 
