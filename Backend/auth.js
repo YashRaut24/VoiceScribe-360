@@ -4,14 +4,14 @@ const jwt = require('jsonwebtoken');
 const { User, LoginSession } = require('./models');
 const { validate } = require('./middleware/validation.middleware');
 const { registerSchema, loginSchema } = require('./validators/auth.validator');
+const audit = require('./middleware/audit.middleware');
 
 // Fallback JWT secret for development (replace with secure key in production)
 const JWT_SECRET = process.env.JWT_SECRET || 'ab5ab79849f4661000f7a25fe309867ef50d70523007ff09f2bf297ab1006aadcbd38c32c0152f932ac96a701ad361f3cda51cc0520238983209086e9cb0766a';
 
 const router = express.Router();
 
-router.post('/register',validate(registerSchema), async (req, res, next) => {
-  try {
+router.post('/register', validate(registerSchema), audit('REGISTER', 'User'), async (req, res, next) => {  try {
 const {
   email,
   password,
@@ -68,8 +68,7 @@ const {
   }
 });
 
-router.post('/login',validate(loginSchema) , async (req, res, next) => {
-  try {
+router.post('/login', validate(loginSchema), audit('LOGIN', 'User'), async (req, res, next) => {  try {
     const { email, password, userType } = req.body;
     
     const user = await User.findOne({ email, userType });
@@ -107,8 +106,7 @@ router.post('/login',validate(loginSchema) , async (req, res, next) => {
   }
 });
 
-router.get('/verify', async (req, res, next) => {
-    try {
+router.get('/verify', audit('TOKEN_VERIFIED', 'User'), async (req, res, next) => {    try {
         const token = req.header('Authorization')?.replace('Bearer ', '');
 
         if (!token) {
