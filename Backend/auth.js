@@ -107,4 +107,37 @@ router.post('/login',validate(loginSchema) , async (req, res, next) => {
   }
 });
 
+router.get('/verify', async (req, res, next) => {
+    try {
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+
+        if (!token) {
+            return res.status(401).json({ message: 'No token provided' });
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        const user = await User.findById(decoded.userId).select('-password');
+
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+
+        res.json({
+            user: {
+                id: user._id,
+                email: user.email,
+                userType: user.userType,
+                firstName: user.firstName,
+                lastName: user.lastName
+            }
+        });
+    } catch (error) {
+        if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Token is invalid or expired' });
+        }
+        next(error);
+    }
+});
+
 module.exports = router;
