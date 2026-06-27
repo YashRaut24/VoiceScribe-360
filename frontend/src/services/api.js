@@ -106,6 +106,11 @@ class ApiService {
       return this.request('/patients');
   }
 
+  // Dashboard
+  async getDashboardStats() {
+      return this.request('/dashboard/stats');
+  }
+
   // Audio
   async uploadAudio(audioBlob) {
       const formData = new FormData();
