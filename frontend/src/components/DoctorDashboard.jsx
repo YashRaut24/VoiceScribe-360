@@ -42,7 +42,13 @@ const DoctorDashboard = () => {
   const recognitionRef = useRef(null);
   const [speechSupported, setSpeechSupported] = useState(true);
   const transcriptRef = useRef('');
-
+  const [stats, setStats] = useState({
+      totalAppointments: 0,
+      totalRecords: 0,
+      upcomingAppointments: 0,
+      patientsThisMonth: 0,
+      recentRecords: []
+  });
 
   useEffect(() => {
     loadData();
@@ -65,21 +71,23 @@ const DoctorDashboard = () => {
   }, []);
 
   const loadData = async () => {
-    try {
-        const [appointmentsData, recordsData, patientsData] = await Promise.all([
-            apiService.getAppointments(),
-            apiService.getMedicalRecords(),
-            apiService.getPatients()
-        ]);
-        setAppointments(appointmentsData);
-        setMedicalRecords(recordsData);
-        setPatients(patientsData);
-    } catch (error) {
-        console.error('Error loading data:', error);
-    } finally {
-        setLoading(false);
-    }
-};
+      try {
+          const [appointmentsData, recordsData, patientsData, statsData] = await Promise.all([
+              apiService.getAppointments(),
+              apiService.getMedicalRecords(),
+              apiService.getPatients(),
+              apiService.getDashboardStats()
+          ]);
+          setAppointments(appointmentsData);
+          setMedicalRecords(recordsData);
+          setPatients(patientsData);
+          setStats(statsData);
+      } catch (error) {
+          console.error('Error loading data:', error);
+      } finally {
+          setLoading(false);
+      }
+  };
 
   const handleLogout = () => {
     logout();
@@ -277,7 +285,7 @@ const DoctorDashboard = () => {
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span>Dr. {user?.firstName} {user?.lastName}</span>
+            <span>{user?.firstName} {user?.lastName}</span>
             <button
               onClick={handleLogout}
               style={{
@@ -356,7 +364,7 @@ const DoctorDashboard = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <Calendar style={{ color: '#3b82f6' }} />
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold' }}>{appointments.length}</h3>
+                    <h3 style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalAppointments}</h3>
                     <p style={{ margin: 0, color: '#64748b' }}>Total Appointments</p>
                   </div>
                 </div>
@@ -371,7 +379,7 @@ const DoctorDashboard = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <FileText style={{ color: '#10b981' }} />
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold' }}>{medicalRecords.length}</h3>
+                    <h3 style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold' }}>{stats.totalRecords}</h3>
                     <p style={{ margin: 0, color: '#64748b' }}>Medical Records</p>
                   </div>
                 </div>
@@ -386,10 +394,24 @@ const DoctorDashboard = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <Users style={{ color: '#f59e0b' }} />
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold' }}>24</h3>
+                    <h3 style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold' }}>{stats.patientsThisMonth}</h3>
                     <p style={{ margin: 0, color: '#64748b' }}>Patients This Month</p>
                   </div>
                 </div>
+              </div>
+              <div style={{
+                  backgroundColor: 'white',
+                  padding: '1.5rem',
+                  borderRadius: '0.5rem',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+              }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <Clock style={{ color: '#8b5cf6' }} />
+                      <div>
+                          <h3 style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold' }}>{stats.upcomingAppointments}</h3>
+                          <p style={{ margin: 0, color: '#64748b' }}>Upcoming Appointments</p>
+                      </div>
+                  </div>
               </div>
             </div>
 
@@ -400,7 +422,7 @@ const DoctorDashboard = () => {
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Recent Medical Records</h3>
-              {medicalRecords.slice(0, 5).map((record, index) => (
+              {stats.recentRecords.map((record, index) => (
                 <div key={index} style={{
                   display: 'flex',
                   justifyContent: 'space-between',
