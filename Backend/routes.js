@@ -149,6 +149,51 @@ router.get('/doctors', auth,requireRole('patient'), async (req, res, next) => {
   }
 });
 
+router.get('/dashboard/stats', auth, requireRole('doctor'), async (req, res, next) => {
+    try {
+        const doctorId = req.user.userId;
+
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - 7);
+
+        const [
+            totalAppointments,
+            totalRecords,
+            upcomingAppointments,
+            patientsThisMonth,
+            recentRecords
+        ] = await Promise.all([
+            Appointment.countDocuments({ doctorId }),
+            MedicalRecord.countDocuments({ doctorId }),
+            Appointment.countDocuments({
+                doctorId,
+                date: { $gt: now },
+                status: 'scheduled'
+            }),
+            Appointment.distinct('patientId', {
+                doctorId,
+                createdAt: { $gte: startOfMonth }
+            }),
+            MedicalRecord.find({ doctorId })
+                .sort({ createdAt: -1 })
+                .limit(5)
+                .populate('patientId', 'firstName lastName')
+        ]);
+
+        res.json({
+            totalAppointments,
+            totalRecords,
+            upcomingAppointments,
+            patientsThisMonth: patientsThisMonth.length,
+            recentRecords
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 router.get('/patients', auth, requireRole('doctor'), async (req, res, next) => {
   try {
     const patients = await User.find({ userType: 'patient' })
