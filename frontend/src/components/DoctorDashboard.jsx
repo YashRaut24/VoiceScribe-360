@@ -652,37 +652,71 @@ const filteredRecords = medicalRecords.filter(record => {
                 </div>
               ) : (
                 appointments.map((appointment, index) => (
-                  <div key={appointment._id} style={{
+                <div key={appointment._id} style={{
                     padding: '1.5rem',
-                    borderBottom: index < appointments.length - 1 ? '1px solid #e2e8f0' : 'none',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: '600' }}>
-                        {appointment.patientId?.firstName} {appointment.patientId?.lastName}
-                      </h4>
-                      <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>
-                        {formatDate(appointment.date)} • {appointment.duration} min
-                      </p>
-                      {appointment.notes && (
-                        <p style={{ margin: '0.5rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
-                          {appointment.notes}
-                        </p>
-                      )}
+                    borderBottom: index < appointments.length - 1 ? '1px solid #e2e8f0' : 'none'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                        <div>
+                            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: '600' }}>
+                                {appointment.patientId?.firstName} {appointment.patientId?.lastName}
+                            </h4>
+                            <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>
+                                {formatDate(appointment.date)} • {appointment.duration} min
+                            </p>
+                            {appointment.notes && (
+                                <p style={{ margin: '0.5rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
+                                    {appointment.notes}
+                                </p>
+                            )}
+                        </div>
+                        <span style={{
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '9999px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            backgroundColor: appointment.status === 'scheduled' ? '#dbeafe' : appointment.status === 'completed' ? '#d1fae5' : '#fee2e2',
+                            color: appointment.status === 'scheduled' ? '#1e40af' : appointment.status === 'completed' ? '#065f46' : '#991b1b'
+                        }}>
+                            {appointment.status}
+                        </span>
                     </div>
-                    <span style={{
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '9999px',
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      backgroundColor: appointment.status === 'scheduled' ? '#dbeafe' : appointment.status === 'completed' ? '#d1fae5' : '#fee2e2',
-                      color: appointment.status === 'scheduled' ? '#1e40af' : appointment.status === 'completed' ? '#065f46' : '#991b1b'
-                    }}>
-                      {appointment.status}
-                    </span>
-                  </div>
+
+                    {appointment.status === 'scheduled' && (
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        await apiService.updateAppointmentStatus(appointment._id, 'completed');
+                                        loadData();
+                                    } catch (error) {
+                                        alert('Failed to update status: ' + error.message);
+                                    }
+                                }}
+                                style={{ padding: '0.375rem 0.75rem', backgroundColor: '#10b981',
+                                    color: 'white', border: 'none', borderRadius: '0.375rem',
+                                    cursor: 'pointer', fontSize: '0.8rem' }}>
+                                Mark Complete
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (window.confirm('Cancel this appointment?')) {
+                                        try {
+                                            await apiService.updateAppointmentStatus(appointment._id, 'cancelled');
+                                            loadData();
+                                        } catch (error) {
+                                            alert('Failed to update status: ' + error.message);
+                                        }
+                                    }
+                                }}
+                                style={{ padding: '0.375rem 0.75rem', backgroundColor: '#ef4444',
+                                    color: 'white', border: 'none', borderRadius: '0.375rem',
+                                    cursor: 'pointer', fontSize: '0.8rem' }}>
+                                Cancel
+                            </button>
+                        </div>
+                    )}
+                </div>
                 ))
               )}
             </div>
