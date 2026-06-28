@@ -54,6 +54,35 @@ router.post('/appointments', auth, requireRole('patient'), audit('CREATE_APPOINT
   }
 });
 
+router.patch('/appointments/:id/status', auth, requireRole('doctor'), async (req, res, next) => {
+    try {
+        const { status } = req.body;
+
+        if (!['scheduled', 'completed', 'cancelled'].includes(status)) {
+            return res.status(400).json({ message: 'Invalid status value' });
+        }
+
+        const appointment = await Appointment.findOne({
+            _id: req.params.id,
+            doctorId: req.user.userId
+        });
+
+        if (!appointment) {
+            return res.status(404).json({ message: 'Appointment not found' });
+        }
+
+        appointment.status = status;
+        await appointment.save();
+
+        await appointment.populate('doctorId', 'firstName lastName specialization');
+        await appointment.populate('patientId', 'firstName lastName');
+
+        res.json(appointment);
+    } catch (error) {
+        next(error);
+    }
+});
+
 router.get('/medical-records', auth, audit('VIEW_MEDICAL_RECORDS', 'MedicalRecord'), async (req, res, next) => {  try {
     const query = req.user.userType === 'doctor' 
       ? { doctorId: req.user.userId }
