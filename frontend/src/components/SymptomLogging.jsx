@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { User, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';import { User, ArrowLeft } from 'lucide-react';
 import api from '../services/api';
 import './SymptomLogging.css';
 
@@ -14,7 +13,13 @@ const SymptomLogging = () => {
   const [loggedSymptoms, setLoggedSymptoms] = useState([]);
   const [careSessions, setCareSessions] = useState(['Care Session 001']);
   const [fetchedSymptoms, setFetchedSymptoms] = useState([]);
-
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recognitionRef = useRef(null);
+  const transcriptRef = useRef('');
+  const [liveTranscript, setLiveTranscript] = useState('');
+  const [micError, setMicError] = useState('');
+  const [speechSupported, setSpeechSupported] = useState(true);
 
   useEffect(() => {
     const fetchSymptoms = async () => {
@@ -32,33 +37,104 @@ const SymptomLogging = () => {
     setTextInput(!textInput);
   };
 
-  const handleSpeakClick = () => {
-    // setInputMode('speak');
-    setSpeakInput(!speakInput);
-    setIsRecording(!isRecording);
-    // Simulate voice recording
-    if (!isRecording) {
-      setTimeout(() => {
-        const newSymptom = {
-          id: Date.now(),
-          code: 'Mild code',
-          timestamp: new Date().toLocaleString('en-GB', {
-            weekday: 'long',
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-          }),
-          hasAudio: true,
-          hasText: false
-        };
-        setLoggedSymptoms([...loggedSymptoms, newSymptom]);
-        setView('logging');
-        setIsRecording(false);
-      }, 2000);
+  useEffect(() => {
+    if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
+        setSpeechSupported(false);
     }
+  }, []);
+
+  const handleSpeakClick = async () => {
+      if (isRecording) {
+          if (recognitionRef.current) {
+              recognitionRef.current.stop();
+              recognitionRef.current = null;
+          }
+
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+              mediaRecorderRef.current.stop();
+          }
+
+          setIsRecording(false);
+          setSpeakInput(false);
+
+          const finalText = transcriptRef.current.trim();
+          if (finalText) {
+              try {
+                  await api.createSymptom(finalText);
+                  const symptoms = await api.getSymptoms();
+                  setFetchedSymptoms(symptoms);
+                  setView('logging');
+              } catch (error) {
+                  console.error('Error submitting spoken symptom:', error);
+              }
+          }
+
+          setLiveTranscript('');
+          transcriptRef.current = '';
+          return;
+      }
+
+      setMicError('');
+      setLiveTranscript('');
+      transcriptRef.current = '';
+      audioChunksRef.current = [];
+
+      try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const mediaRecorder = new MediaRecorder(stream);
+          mediaRecorderRef.current = mediaRecorder;
+
+          mediaRecorder.ondataavailable = (event) => {
+              if (event.data.size > 0) {
+                  audioChunksRef.current.push(event.data);
+              }
+          };
+
+          mediaRecorder.onstop = () => {
+              stream.getTracks().forEach(track => track.stop());
+          };
+
+          mediaRecorder.start();
+          setIsRecording(true);
+          setSpeakInput(true);
+
+          if (speechSupported) {
+              const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+              const recognition = new SpeechRecognition();
+              recognitionRef.current = recognition;
+
+              recognition.continuous = true;
+              recognition.interimResults = true;
+              recognition.lang = 'en-US';
+
+              let finalTranscript = '';
+
+              recognition.onresult = (event) => {
+                  let interimTranscript = '';
+                  for (let i = event.resultIndex; i < event.results.length; i++) {
+                      const transcript = event.results[i][0].transcript;
+                      if (event.results[i].isFinal) {
+                          finalTranscript += transcript + ' ';
+                      } else {
+                          interimTranscript += transcript;
+                      }
+                  }
+                  transcriptRef.current = finalTranscript;
+                  setLiveTranscript(finalTranscript + interimTranscript);
+              };
+
+              recognition.onerror = (event) => {
+                  console.error('Speech recognition error:', event.error);
+              };
+
+              recognition.start();
+          }
+      } catch (error) {
+          console.error('Microphone error:', error);
+          setMicError('Microphone access denied. Please allow microphone permissions.');
+          setIsRecording(false);
+          setSpeakInput(false);
+      }
   };
 
   const handleSubmitText = async () => {
@@ -138,21 +214,47 @@ const SymptomLogging = () => {
       <main className="main-content">
         {view !== 'summary' && (
           <>
-            <div className="input-controls">
-              <button 
-                className={`control-btn ${textInput ? 'active' : ''}`}
-                onClick={handleTypeClick}
-              >
-                Type
-              </button>
-              <span className="or-text">OR</span>
-              <button 
-                className={`control-btn ${speakInput|| isRecording ? 'active' : ''}`}
-                onClick={handleSpeakClick}
-              >
-                {isRecording ? 'Recording...' : 'Speak'}
-              </button>
-            </div>
+<div className="input-controls">
+    <button
+        className={`control-btn ${textInput ? 'active' : ''}`}
+        onClick={handleTypeClick}
+    >
+        Type
+    </button>
+    <span className="or-text">OR</span>
+    <button
+        className={`control-btn ${speakInput || isRecording ? 'active' : ''}`}
+        onClick={handleSpeakClick}
+    >
+        {isRecording ? 'Recording...' : 'Speak'}
+    </button>
+</div>
+
+{micError && (
+    <p style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+        {micError}
+    </p>
+)}
+
+{isRecording && (
+    <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f0fdf4',
+        border: '1px solid #86efac', borderRadius: '0.5rem' }}>
+        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#16a34a', fontWeight: '600' }}>
+            🎤 Recording... speak your symptoms. Click "Recording..." to stop.
+        </p>
+        <p style={{ margin: 0, color: '#374151', fontSize: '0.9rem', minHeight: '40px' }}>
+            {liveTranscript || 'Listening...'}
+        </p>
+    </div>
+)}
+
+{!speechSupported && (
+    <div style={{ marginTop: '0.5rem', padding: '0.5rem 0.75rem',
+        backgroundColor: '#fef3c7', border: '1px solid #f59e0b',
+        borderRadius: '0.375rem', fontSize: '0.8rem', color: '#92400e' }}>
+        Live transcription not supported in this browser. Use Chrome or Edge.
+    </div>
+)}
 
             <p className="instruction-text">About your symptoms</p>
 
