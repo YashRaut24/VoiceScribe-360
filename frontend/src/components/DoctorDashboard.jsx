@@ -42,6 +42,9 @@ const DoctorDashboard = () => {
   const recognitionRef = useRef(null);
   const [speechSupported, setSpeechSupported] = useState(true);
   const transcriptRef = useRef('');
+  const [recordSearch, setRecordSearch] = useState('');
+  const [recordDateFrom, setRecordDateFrom] = useState('');
+  const [recordDateTo, setRecordDateTo] = useState('');
   const [stats, setStats] = useState({
       totalAppointments: 0,
       totalRecords: 0,
@@ -264,6 +267,23 @@ const DoctorDashboard = () => {
       </div>
     );
   }
+
+const filteredRecords = medicalRecords.filter(record => {
+    const searchLower = recordSearch.toLowerCase().trim();
+
+    const fullName = `${record.patientId?.firstName || ''} ${record.patientId?.lastName || ''}`.toLowerCase();
+    const diagnosis = (record.diagnosis || '').toLowerCase();
+
+    const matchesSearch = !searchLower || searchLower.length < 2 ||
+    fullName.includes(searchLower) ||
+    (searchLower.length >= 4 && diagnosis.includes(searchLower));
+    
+    const recordDate = new Date(record.createdAt);
+    const matchesFrom = !recordDateFrom || recordDate >= new Date(recordDateFrom);
+    const matchesTo = !recordDateTo || recordDate <= new Date(recordDateTo + 'T23:59:59');
+
+    return matchesSearch && matchesFrom && matchesTo;
+});
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
@@ -670,62 +690,112 @@ const DoctorDashboard = () => {
         )}
 
         {activeTab === 'records' && (
-          <div>
-            <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem' }}>Medical Records</h2>
-            
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '0.5rem',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              overflow: 'hidden'
-            }}>
-              {medicalRecords.length === 0 ? (
-                <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
-                  <FileText size={48} style={{ margin: '0 auto 1rem' }} />
-                  <p>No medical records found</p>
-                </div>
-              ) : (
-                medicalRecords.map((record, index) => (
-                  <div key={index} style={{
-                    padding: '1.5rem',
-                    borderBottom: index < medicalRecords.length - 1 ? '1px solid #e2e8f0' : 'none'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                      <div>
-                        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem', fontWeight: '600' }}>
-                          {record.diagnosis || 'General Consultation'}
-                        </h4>
-                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>
-                          {formatDate(record.createdAt)}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setSelectedRecord(record)}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: '#3b82f6',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '0.25rem',
-                          cursor: 'pointer',
-                          fontSize: '0.875rem'
-                      }}>
-                        View Details
-                      </button>
-                    </div>
-                    
-                    {record.soapNotes && (
-                      <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                        <p><strong>Assessment:</strong> {record.soapNotes.assessment}</p>
-                        <p><strong>Plan:</strong> {record.soapNotes.plan}</p>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
+    <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h2 style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>Medical Records</h2>
+            <span style={{ color: '#64748b', fontSize: '0.875rem' }}>
+                {filteredRecords.length} of {medicalRecords.length} records
+            </span>
+        </div>
+
+        <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', padding: '1rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '1rem',
+            display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div style={{ flex: 2, minWidth: '200px' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                    Search by patient or diagnosis
+                </label>
+                <input
+                    type="text"
+                    placeholder="e.g. John Smith or Hypertension..."
+                    value={recordSearch}
+                    onChange={(e) => setRecordSearch(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem',
+                        border: '1px solid #e2e8f0', fontSize: '0.875rem', boxSizing: 'border-box' }}
+                />
             </div>
-          </div>
-       )}
+            <div style={{ flex: 1, minWidth: '140px' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                    From date
+                </label>
+                <input
+                    type="date"
+                    value={recordDateFrom}
+                    onChange={(e) => setRecordDateFrom(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem',
+                        border: '1px solid #e2e8f0', fontSize: '0.875rem', boxSizing: 'border-box' }}
+                />
+            </div>
+            <div style={{ flex: 1, minWidth: '140px' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                    To date
+                </label>
+                <input
+                    type="date"
+                    value={recordDateTo}
+                    onChange={(e) => setRecordDateTo(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem',
+                        border: '1px solid #e2e8f0', fontSize: '0.875rem', boxSizing: 'border-box' }}
+                />
+            </div>
+            {(recordSearch || recordDateFrom || recordDateTo) && (
+                <button
+                    onClick={() => { setRecordSearch(''); setRecordDateFrom(''); setRecordDateTo(''); }}
+                    style={{ padding: '0.5rem 1rem', backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0',
+                        borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+                    Clear Filters
+                </button>
+            )}
+        </div>
+
+        <div style={{ backgroundColor: 'white', borderRadius: '0.5rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+            {filteredRecords.length === 0 ? (
+                <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                    <FileText size={48} style={{ margin: '0 auto 1rem' }} />
+                    <p>{medicalRecords.length === 0 ? 'No medical records found' : 'No records match your search'}</p>
+                    {medicalRecords.length > 0 && (
+                        <button onClick={() => { setRecordSearch(''); setRecordDateFrom(''); setRecordDateTo(''); }}
+                            style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', backgroundColor: '#3b82f6',
+                                color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}>
+                            Clear Filters
+                        </button>
+                    )}
+                </div>
+            ) : (
+                filteredRecords.map((record, index) => (
+                    <div key={record._id} style={{ padding: '1.5rem',
+                        borderBottom: index < filteredRecords.length - 1 ? '1px solid #e2e8f0' : 'none' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
+                            <div>
+                                <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1.125rem', fontWeight: '600' }}>
+                                    {record.diagnosis || 'General Consultation'}
+                                </h4>
+                                <p style={{ margin: '0 0 0.25rem 0', color: '#475569', fontSize: '0.875rem', fontWeight: '500' }}>
+                                    {record.patientId?.firstName} {record.patientId?.lastName}
+                                </p>
+                                <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>
+                                    {formatDate(record.createdAt)}
+                                </p>
+                            </div>
+                            <button onClick={() => setSelectedRecord(record)}
+                                style={{ padding: '0.5rem 1rem', backgroundColor: '#3b82f6', color: 'white',
+                                    border: 'none', borderRadius: '0.25rem', cursor: 'pointer', fontSize: '0.875rem' }}>
+                                View Details
+                            </button>
+                        </div>
+                        {record.soapNotes && (record.soapNotes.assessment || record.soapNotes.plan) && (
+                            <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                                {record.soapNotes.assessment && <p style={{ margin: '0 0 0.25rem 0' }}><strong>Assessment:</strong> {record.soapNotes.assessment}</p>}
+                                {record.soapNotes.plan && <p style={{ margin: 0 }}><strong>Plan:</strong> {record.soapNotes.plan}</p>}
+                            </div>
+                        )}
+                    </div>
+                ))
+            )}
+        </div>
+    </div>
+)}
       </div>
 
       {selectedRecord && (
