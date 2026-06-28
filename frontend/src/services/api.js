@@ -84,6 +84,13 @@ class ApiService {
     });
   }
 
+  async updateAppointmentStatus(id, status) {
+      return this.request(`/appointments/${id}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status })
+      });
+  }
+
   // Medical Records
   async getMedicalRecords() {
     return this.request('/medical-records');
