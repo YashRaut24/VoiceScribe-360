@@ -1,13 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, ArrowRight, FileText, Stethoscope, Activity, Shield, Lock, Heart, LogOut } from 'lucide-react';
 import './PatientDashboard.css';
 import { useAuth } from '../contexts/useAuth';
+import apiService from '../services/api';
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
- 
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+
+  const [metrics, setMetrics] = useState({
+        symptomCount: 0,
+        totalAppointments: 0,
+        upcomingAppointments: 0
+    });
+
+    useEffect(() => {
+        const loadMetrics = async () => {
+            try {
+                const [symptoms, appointments] = await Promise.all([
+                    apiService.getSymptoms(),
+                    apiService.getAppointments()
+                ]);
+
+                const now = new Date();
+                const upcoming = appointments.filter(a =>
+                    new Date(a.date) > now && a.status === 'scheduled'
+                ).length;
+
+                setMetrics({
+                    symptomCount: symptoms.length,
+                    totalAppointments: appointments.length,
+                    upcomingAppointments: upcoming
+                });
+            } catch (error) {
+                console.error('Failed to load metrics:', error);
+            }
+        };
+
+        loadMetrics();
+    }, []);
 
   const handleLogout = () => {
       logout();
@@ -21,6 +53,7 @@ const PatientDashboard = () => {
   const handleBookAppointment = () => {
       navigate('/patient/book-appointment');
   };
+
 
   return (
     <div className="patient-dashboard">
@@ -57,7 +90,9 @@ const PatientDashboard = () => {
       <div className="dashboard-container">
         
         <section className="welcome-section">
-          <h1 className="welcome-title">Feeling unusual lately?</h1>
+          <h1 className="welcome-title">
+              {user?.firstName ? `Hello, ${user.firstName}!` : 'Feeling unusual lately?'}
+          </h1>
           <p className="welcome-subtitle">
             Don't let symptoms fade before your doctor's visit. Capture your health journey naturally.
           </p>
@@ -66,6 +101,65 @@ const PatientDashboard = () => {
             <ArrowRight />
           </button>
         </section>
+
+        <section style={{ padding: '1rem 0 2rem 0' }}>
+          <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1rem'
+          }}>
+              <div style={{ backgroundColor: 'white', padding: '1.25rem',
+                  borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ backgroundColor: '#dbeafe', padding: '0.75rem',
+                      borderRadius: '0.5rem' }}>
+                      <FileText size={20} style={{ color: '#3b82f6' }} />
+                  </div>
+                  <div>
+                      <p style={{ margin: 0, fontSize: '1.75rem', fontWeight: 'bold', color: '#1e293b' }}>
+                          {metrics.symptomCount}
+                      </p>
+                      <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>
+                          Symptom Logs
+                      </p>
+                  </div>
+              </div>
+
+              <div style={{ backgroundColor: 'white', padding: '1.25rem',
+                  borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ backgroundColor: '#d1fae5', padding: '0.75rem',
+                      borderRadius: '0.5rem' }}>
+                      <Stethoscope size={20} style={{ color: '#10b981' }} />
+                  </div>
+                  <div>
+                      <p style={{ margin: 0, fontSize: '1.75rem', fontWeight: 'bold', color: '#1e293b' }}>
+                          {metrics.totalAppointments}
+                      </p>
+                      <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>
+                          Total Appointments
+                      </p>
+                  </div>
+              </div>
+
+              <div style={{ backgroundColor: 'white', padding: '1.25rem',
+                  borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ backgroundColor: '#fef3c7', padding: '0.75rem',
+                      borderRadius: '0.5rem' }}>
+                      <Activity size={20} style={{ color: '#f59e0b' }} />
+                  </div>
+                  <div>
+                      <p style={{ margin: 0, fontSize: '1.75rem', fontWeight: 'bold', color: '#1e293b' }}>
+                          {metrics.upcomingAppointments}
+                      </p>
+                      <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>
+                          Upcoming Appointments
+                      </p>
+                  </div>
+              </div>
+          </div>
+      </section>
 
         
         <section className="care-journey-section">
