@@ -45,9 +45,21 @@ const SignUp = () => {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+        setError('Password must be at least 8 characters and include uppercase, lowercase, and a number');
+        return;
+    }
+
+    if (!formData.phone) {
+        setError('Phone number is required');
+        return;
+    }
+
+    const phoneRegex = /^(\+\d{1,3})?[0-9]{10}$/;
+    if (!phoneRegex.test(formData.phone)) {
+        setError('Phone must be 10 digits, optionally with country code (e.g. +91)');
+        return;
     }
 
     if (userType === 'doctor' && (!formData.licenseNumber || !formData.specialization)) {
@@ -301,14 +313,14 @@ const SignUp = () => {
 
             {}
             <div className="signup-form-group">
-              <label className="signup-label">Phone Number</label>
+              <label className="signup-label">Phone Number *</label>
               <input
                 type="tel"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
                 className="signup-input"
-                placeholder="+91 98765 43210"
+                placeholder="9876543210 or +919876543210"
               />
             </div>
 
@@ -325,7 +337,7 @@ const SignUp = () => {
                   className="signup-input with-icon with-toggle"
                   placeholder="••••••••"
                   required
-                  minLength="6"
+                  minLength="8"
                 />
                 <button
                   type="button"
@@ -335,6 +347,9 @@ const SignUp = () => {
                   {showPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
+              <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                  Min 8 characters with uppercase, lowercase, and a number
+              </p>
             </div>
 
             {}
