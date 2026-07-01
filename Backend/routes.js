@@ -166,6 +166,34 @@ router.post('/generate-soap', auth, requireRole('doctor'), audit('GENERATE_SOAP'
     }
 });
 
+router.post('/analyze-symptoms', auth, requireRole('patient'), audit('ANALYZE_SYMPTOMS', 'SymptomLog'), async (req, res, next) => {
+    try {
+        const { symptoms } = req.body;
+
+        if (!Array.isArray(symptoms) || symptoms.length === 0) {
+            return res.status(400).json({
+                message: 'Symptoms array is required'
+            });
+        }
+
+        const response = await axios.post('http://localhost:5000/analyze-symptoms', {
+            symptoms
+        });
+
+        res.json(response.data);
+
+    } catch (error) {
+        if (error.response?.data) {
+            return res.status(500).json({
+                message: 'Symptom analysis failed',
+                details: error.response.data
+            });
+        }
+
+        next(error);
+    }
+});
+
 router.get('/doctors', auth,requireRole('patient'), async (req, res, next) => {
   try {
     const doctors = await User.find({ userType: 'doctor' })
