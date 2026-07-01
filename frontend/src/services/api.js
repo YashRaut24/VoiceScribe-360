@@ -151,6 +151,13 @@ class ApiService {
       });
   }
 
+  async analyzeSymptoms(symptoms) {
+    return this.request('/analyze-symptoms', {
+        method: 'POST',
+        body: JSON.stringify({ symptoms })
+    });
+  }
+
   // Symptoms
   async getSymptoms() {
     return this.request('/symptoms');
