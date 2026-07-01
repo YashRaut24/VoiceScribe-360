@@ -6,10 +6,11 @@ const { validate } = require('./middleware/validation.middleware');
 const { registerSchema, loginSchema } = require('./validators/auth.validator');
 const audit = require('./middleware/audit.middleware');
 
-// Fallback JWT secret for development (replace with secure key in production)
-const JWT_SECRET = process.env.JWT_SECRET || 'ab5ab79849f4661000f7a25fe309867ef50d70523007ff09f2bf297ab1006aadcbd38c32c0152f932ac96a701ad361f3cda51cc0520238983209086e9cb0766a';
-
+const JWT_SECRET = process.env.JWT_SECRET;
 const router = express.Router();
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET is not configured');
+}
 
 router.post('/register', validate(registerSchema), audit('REGISTER', 'User'), async (req, res, next) => {  try {
 const {
@@ -130,10 +131,15 @@ router.get('/verify', audit('TOKEN_VERIFIED', 'User'), async (req, res, next) =>
                 lastName: user.lastName
             }
         });
-    } catch (error) {
-        if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-            return res.status(401).json({ message: 'Token is invalid or expired' });
+    }catch (error) {
+        if (
+            error.name === 'JsonWebTokenError' ||
+            error.name === 'TokenExpiredError'
+        ) {
+            error.status = 401;
+            error.message = 'Token is invalid or expired';
         }
+
         next(error);
     }
 });
