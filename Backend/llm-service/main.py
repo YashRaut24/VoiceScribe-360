@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from llm import run_llm, generate_soap_notes
+from llm import run_llm, generate_soap_notes, analyze_symptoms_for_patient
 
 app = Flask(__name__)
 
@@ -50,6 +50,29 @@ def generate_soap():
             "details": str(e)
         }), 500
 
+@app.route('/analyze-symptoms', methods=['POST'])
+def analyze_symptoms():
+    data = request.get_json()
+
+    if not data or 'symptoms' not in data:
+        return jsonify({"error": "Missing 'symptoms' field"}), 400
+
+    symptoms_list = data['symptoms']
+
+    if not isinstance(symptoms_list, list) or len(symptoms_list) == 0:
+        return jsonify({"error": "symptoms must be a non-empty array"}), 400
+
+    try:
+        analysis = analyze_symptoms_for_patient(symptoms_list)
+        return jsonify({
+            "analysis": analysis
+        })
+
+    except Exception as e:
+        return jsonify({
+            "error": "Analysis failed",
+            "details": str(e)
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
