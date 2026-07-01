@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';import { User, ArrowLeft } from 'lucide-react';
 import api from '../services/api';
 import './SymptomLogging.css';
+import { useAuth } from '../contexts/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 const SymptomLogging = () => {
   const [view, setView] = useState('initial'); // 'initial', 'logging', 'summary'
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [inputMode, setInputMode] = useState(null); // 'type' or 'speak'
   const [textInput, setTextInput] = useState(false);
   const [speakInput, setSpeakInput] = useState(false);
   const [symptomText, setSymptomText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const [loggedSymptoms, setLoggedSymptoms] = useState([]);
   const [careSessions, setCareSessions] = useState(['Care Session 001']);
   const [fetchedSymptoms, setFetchedSymptoms] = useState([]);
   const mediaRecorderRef = useRef(null);
@@ -20,6 +20,14 @@ const SymptomLogging = () => {
   const [liveTranscript, setLiveTranscript] = useState('');
   const [micError, setMicError] = useState('');
   const [speechSupported, setSpeechSupported] = useState(true);
+  const { user } = useAuth();
+  const [submitError, setSubmitError] = useState('');
+  const navigate = useNavigate();
+  const [shareSuccess, setShareSuccess] = useState(false);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [analysis, setAnalysis] = useState('');
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState('');
 
   useEffect(() => {
     const fetchSymptoms = async () => {
@@ -137,21 +145,29 @@ const SymptomLogging = () => {
       }
   };
 
-  const handleSubmitText = async () => {
-    if (symptomText.trim()) {
-      try {
+const handleSubmitText = async () => {
+    if (!symptomText.trim()) return;
+
+    if (symptomText.trim().length < 10) {
+      setSubmitError('Please describe your symptoms in at least 10 characters');
+      return;
+    }
+
+    setSubmitError('');
+
+    try {
         await api.createSymptom(symptomText);
         setSymptomText('');
         setView('logging');
-        setInputMode(null);
-        // Refetch symptoms to display the new one with structured data
         const symptoms = await api.getSymptoms();
         setFetchedSymptoms(symptoms);
-      } catch (error) {
-        console.error('Error submitting symptoms:', error);
-      }
+    } catch (error) {
+        const message = error.errors && error.errors.length > 0
+            ? error.errors.join(', ')
+            : error.message;
+        setSubmitError(message);
     }
-  };
+};
 
   const handleStopSession = () => {
     setShowConfirmModal(true);
@@ -164,27 +180,57 @@ const SymptomLogging = () => {
     }
   };
 
-  const handleBack = () => {
-    if (view === 'summary') {
-      setView('initial');
-      setLoggedSymptoms([]);
-      setInputMode(null);
-    } else {
-      window.history.back();
-    }
+  const handleShare = () => {
+      const summary = fetchedSymptoms.map(s => {
+          const dateStr = new Date(s.createdAt).toLocaleDateString('en-US', {
+              year: 'numeric', month: 'short', day: 'numeric'
+          });
+          return `[${dateStr}] ${s.symptomsText}`;
+      }).join('\n');
+      const fullText = `Symptom Log for ${user?.firstName} ${user?.lastName}\n${'='.repeat(40)}\n${summary}`;
+      navigator.clipboard.writeText(fullText).then(() => {
+          setShareSuccess(true);
+          setTimeout(() => setShareSuccess(false), 3000);
+      });
   };
 
+  const handleAnalyzeSymptoms = async () => {
+      try {
+          setAnalysisLoading(true);
+          setAnalysisError('');
+
+          const symptoms = fetchedSymptoms.map(symptom => symptom.symptomsText);
+
+          const response = await api.analyzeSymptoms(symptoms);
+
+          setAnalysis(response.analysis);
+          setShowAnalysisModal(true);
+      } catch (error) {
+          setAnalysisError(error.message || 'Failed to analyze symptoms');
+          setShowAnalysisModal(true);
+      } finally {
+          setAnalysisLoading(false);
+      }
+  };
+
+  const handleBack = () => {
+      if (view === 'summary') {
+        setView('initial');
+      } else {
+        window.history.back();
+      }
+  };
   return (
     <div className="symptom-logging-new">
       
       <aside className="sidebar">
         <div className="sidebar-content">
-          <div className="profile-section">
+        <div className="profile-section">
             <div className="profile-circle">
-              <User size={40} />
+                <User size={40} />
             </div>
-            <p className="profile-name">Name</p>
-          </div>
+            <p className="profile-name">{user?.firstName} {user?.lastName}</p>
+        </div>
 
           <div className="care-sessions-section">
             <h3 className="care-sessions-title">Care Sessions</h3>
@@ -196,7 +242,7 @@ const SymptomLogging = () => {
                 >
                   {session}
                   {index === careSessions.length - 1 && view === 'logging' && (
-                    <span className="session-count"> {String(loggedSymptoms.length).padStart(3, '0')}</span>
+                    <span className="session-count"> {String(fetchedSymptoms.length).padStart(3, '0')}</span>
                   )}
                 </div>
               ))}
@@ -257,7 +303,6 @@ const SymptomLogging = () => {
 )}
 
             <p className="instruction-text">About your symptoms</p>
-
             {textInput && (
               <div className="text-input-area">
                 <textarea
@@ -267,12 +312,16 @@ const SymptomLogging = () => {
                   onChange={(e) => setSymptomText(e.target.value)}
                   rows={8}
                 />
+                {submitError && (
+                  <p style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                    {submitError}
+                  </p>
+                )}
                 <button className="submit-btn" onClick={handleSubmitText}>
                   Submit
                 </button>
               </div>
             )}
-
             {fetchedSymptoms.length > 0 && (
               <div className="fetched-symptoms-log">
                 {fetchedSymptoms.map((symptom) => (
@@ -327,29 +376,16 @@ const SymptomLogging = () => {
           </>
         )}
 
-        {view === 'logging' && (
+        {fetchedSymptoms.length > 0 && view !== 'summary' && (
           <>
-            <div className="symptoms-log">
-              {loggedSymptoms.map((symptom) => (
-                <div key={symptom.id} className="symptom-card">
-                  <div className="symptom-avatar-circle">
-                    <User size={24} />
-                  </div>
-                  <div className="symptom-info">
-                    <span className="symptom-code">{symptom.code}</span>
-                    <div className="symptom-icons">
-                      {symptom.hasText && <span className="icon-indicator">📝</span>}
-                      {symptom.hasAudio && <span className="icon-indicator">🎤</span>}
-                    </div>
-                  </div>
-                  <span className="symptom-timestamp">{symptom.timestamp}</span>
-                </div>
-              ))}
-            </div>
 
             <div className="action-buttons">
-              <button className="action-btn">Generate timeline</button>
-              <button className="action-btn">Ask Clinsight AI</button>
+              <button className="action-btn" onClick={() => navigate('/patient/timeline')}>
+                  Generate timeline
+              </button>
+              <button className="action-btn" onClick={handleAnalyzeSymptoms}>
+                  Ask Clinsight AI
+              </button>
               <button className="action-btn" onClick={handleStopSession}>
                 Stop session
               </button>
@@ -364,17 +400,23 @@ const SymptomLogging = () => {
             
             <div className="summary-card">
               <h3>Summary</h3>
-              <p>Your symptom logging session has been completed. {loggedSymptoms.length} symptoms were recorded.</p>
+              <p>Your symptom logging session has been completed. {fetchedSymptoms.length} symptoms were recorded.</p>
             </div>
 
             <div className="summary-actions">
-              <button className="summary-btn">Timeline</button>
-              <button className="summary-btn">Share 📤</button>
+              <button className="summary-btn" onClick={() => navigate('/patient/timeline')}>
+                  Timeline
+              </button>
+              <button className="summary-btn" onClick={handleShare}>
+                  {shareSuccess ? '✓ Copied!' : 'Share 📤'}
+              </button>
             </div>
 
             <div className="nearby-doctors">
               <h3>Nearby Doctors</h3>
-              <button className="select-doctor-btn">Select Doctor</button>
+              <button className="select-doctor-btn" onClick={() => navigate('/patient/book-appointment')}>
+                  Select Doctor
+              </button>
             </div>
           </div>
         )}
@@ -398,6 +440,33 @@ const SymptomLogging = () => {
               >
                 Yes
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAnalysisModal && (
+        <div className="analysis-modal-overlay">
+          <div className="analysis-modal">
+            <div className="analysis-modal-header">
+              <h2>🧠 Clinsight AI Analysis</h2>
+
+              <button
+                className="analysis-close-btn"
+                onClick={() => setShowAnalysisModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="analysis-modal-body">
+              {analysisLoading ? (
+                <p>Analyzing your symptoms...</p>
+              ) : analysisError ? (
+                <p className="analysis-error">{analysisError}</p>
+              ) : (
+                <p className="analysis-text">{analysis}</p>
+              )}
             </div>
           </div>
         </div>
