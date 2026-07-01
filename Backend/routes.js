@@ -155,13 +155,11 @@ router.post('/generate-soap', auth, requireRole('doctor'), audit('GENERATE_SOAP'
 
         res.json(response.data);
 
-    } catch (error) {
+    }catch (error) {
         if (error.response?.data) {
-            return res.status(500).json({
-                message: 'SOAP generation failed',
-                details: error.response.data
-            });
+            error.message = 'SOAP generation failed';
         }
+
         next(error);
     }
 });
@@ -183,11 +181,8 @@ router.post('/analyze-symptoms', auth, requireRole('patient'), audit('ANALYZE_SY
         res.json(response.data);
 
     } catch (error) {
-        if (error.response?.data) {
-            return res.status(500).json({
-                message: 'Symptom analysis failed',
-                details: error.response.data
-            });
+    if (error.response?.data) {
+            error.message = 'Symptom analysis failed';
         }
 
         next(error);
