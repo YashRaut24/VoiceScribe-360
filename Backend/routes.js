@@ -125,6 +125,44 @@ router.post('/medical-records', auth, requireRole('doctor'), audit('CREATE_MEDIC
   }
 });
 
+router.patch(
+    '/medical-records/:id',
+    auth,
+    requireRole('doctor'),
+    audit('UPDATE_MEDICAL_RECORD', 'MedicalRecord'),
+    async (req, res, next) => {
+        try {
+            const {
+                diagnosis,
+                prescription,
+                soapNotes
+            } = req.body;
+
+            const record = await MedicalRecord.findOne({
+                _id: req.params.id,
+                doctorId: req.user.userId
+            });
+
+            if (!record) {
+                return res.status(404).json({
+                    message: 'Medical record not found'
+                });
+            }
+
+            record.diagnosis = diagnosis;
+            record.prescription = prescription;
+            record.soapNotes = soapNotes;
+
+            await record.save();
+
+            res.json(record);
+
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
 router.post('/upload-audio', auth, requireRole('doctor'), audit('UPLOAD_AUDIO', 'MedicalRecord'), upload.single('audio'), async (req, res, next) => {    try {
         if (!req.file) {
             return res.status(400).json({ message: 'No audio file uploaded' });

@@ -111,7 +111,8 @@ const auditLogSchema = new mongoose.Schema({
             'DELETE_SYMPTOM',
             'UPLOAD_AUDIO',
             'GENERATE_SOAP',
-            'TOKEN_VERIFIED'
+            'TOKEN_VERIFIED',
+            'UPDATE_MEDICAL_RECORD',
         ],
         required: true
     },

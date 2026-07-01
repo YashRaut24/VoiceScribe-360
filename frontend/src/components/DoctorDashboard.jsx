@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import "../components/DoctorDashboard.css";
 import { 
   Mic, 
   MicOff, 
@@ -64,6 +65,19 @@ const DoctorDashboard = () => {
   const [showSoapReview, setShowSoapReview] = useState(false);
 
   const [pendingRecord, setPendingRecord] = useState(null);
+
+  const [editingRecord, setEditingRecord] = useState(false);
+
+  const [editedRecord, setEditedRecord] = useState({
+      diagnosis: '',
+      prescription: '',
+      soapNotes: {
+          subjective: '',
+          objective: '',
+          assessment: '',
+          plan: ''
+      }
+  });
 
   useEffect(() => {
     loadData();
@@ -170,6 +184,27 @@ const DoctorDashboard = () => {
           setMicError('Microphone access was denied or is unavailable. Please allow microphone permissions and try again.');
       }
   };
+
+  const handleUpdateMedicalRecord = async () => {
+    try {
+        const updatedRecord = await apiService.updateMedicalRecord(
+            selectedRecord._id,
+            editedRecord
+        );
+
+        await loadData();
+
+        setSelectedRecord(updatedRecord);
+
+        setEditingRecord(false);
+
+        alert('Medical record updated successfully.');
+
+    } catch (error) {
+        console.error(error);
+        alert('Failed to update medical record.');
+    }
+};
 
   const stopRecording = async () => {
       setIsRecording(false);
@@ -866,11 +901,27 @@ const filteredRecords = medicalRecords.filter(record => {
                                     {formatDate(record.createdAt)}
                                 </p>
                             </div>
-                            <button onClick={() => setSelectedRecord(record)}
-                                style={{ padding: '0.5rem 1rem', backgroundColor: '#3b82f6', color: 'white',
-                                    border: 'none', borderRadius: '0.25rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                                View Details
-                            </button>
+                        <button
+                            className="view-details-btn"
+                            onClick={() => {
+                                setSelectedRecord(record);
+
+                                setEditedRecord({
+                                    diagnosis: record.diagnosis || '',
+                                    prescription: record.prescription || '',
+                                    soapNotes: {
+                                        subjective: record.soapNotes?.subjective || '',
+                                        objective: record.soapNotes?.objective || '',
+                                        assessment: record.soapNotes?.assessment || '',
+                                        plan: record.soapNotes?.plan || ''
+                                    }
+                                });
+
+                                setEditingRecord(false);
+                            }}
+                        >
+                            View Details
+                        </button>
                         </div>
                         {record.soapNotes && (record.soapNotes.assessment || record.soapNotes.plan) && (
                             <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
@@ -1012,56 +1063,87 @@ const filteredRecords = medicalRecords.filter(record => {
       )}
 
       {selectedRecord && (
-        <div
-          onClick={() => setSelectedRecord(null)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '1rem'
-          }}
-        >
           <div
-            onClick={(e) => e.stopPropagation()}
+            onClick={() => setSelectedRecord(null)}
             style={{
-              backgroundColor: 'white',
-              borderRadius: '0.5rem',
-              padding: '2rem',
-              maxWidth: '600px',
-              width: '100%',
-              maxHeight: '85vh',
-              overflowY: 'auto'
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              padding: '1rem'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1.5rem' }}>
-              <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>
-                {selectedRecord.diagnosis || 'General Consultation'}
-              </h2>
-              <button
-                onClick={() => setSelectedRecord(null)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '1.5rem',
-                  cursor: 'pointer',
-                  color: '#64748b',
-                  lineHeight: 1
-                }}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '0.5rem',
+                padding: '2rem',
+                maxWidth: '600px',
+                width: '100%',
+                maxHeight: '85vh',
+                overflowY: 'auto'
+              }}
+            >
+              <div
+                  style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '1.5rem'
+                  }}
               >
-                ×
-              </button>
-            </div>
+                  <h2>Medical Record Details</h2>
 
-            <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
-              Patient: {selectedRecord.patientId?.firstName} {selectedRecord.patientId?.lastName} • {formatDate(selectedRecord.createdAt)}
-            </p>
+                  <button
+                      onClick={() => setSelectedRecord(null)}
+                      style={{
+                          background: 'none',
+                          border: 'none',
+                          fontSize: '1.5rem',
+                          cursor: 'pointer',
+                          color: '#64748b'
+                      }}
+                  >
+                      ×
+                  </button>
+              </div>
+
+              <button
+                  className="view-details-btn"
+                  onClick={() => setEditingRecord(!editingRecord)}
+              >
+                  {editingRecord ? 'Cancel Edit' : 'Edit'}
+              </button>
+
+        <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
+          Patient: {selectedRecord.patientId?.firstName} {selectedRecord.patientId?.lastName} • {formatDate(selectedRecord.createdAt)}
+        </p>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h4>Diagnosis</h4>
+
+          {editingRecord ? (
+              <input
+                  type="text"
+                  value={editedRecord.diagnosis}
+                  onChange={(e) =>
+                      setEditedRecord(prev => ({
+                          ...prev,
+                          diagnosis: e.target.value
+                      }))
+                  }
+                  className="record-input"
+              />
+          ) : (
+              <p>{selectedRecord.diagnosis || 'Not provided'}</p>
+          )}
+        </div>
 
             {selectedRecord.voiceTranscription && (
               <div style={{ marginBottom: '1.5rem' }}>
@@ -1072,27 +1154,113 @@ const filteredRecords = medicalRecords.filter(record => {
               </div>
             )}
 
-            {selectedRecord.soapNotes && (
+          {selectedRecord.soapNotes && (
               <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{ marginBottom: '0.5rem' }}>SOAP Notes</h4>
-                <p style={{ marginBottom: '0.5rem' }}><strong>Subjective:</strong> {selectedRecord.soapNotes.subjective}</p>
-                <p style={{ marginBottom: '0.5rem' }}><strong>Objective:</strong> {selectedRecord.soapNotes.objective}</p>
-                <p style={{ marginBottom: '0.5rem' }}><strong>Assessment:</strong> {selectedRecord.soapNotes.assessment}</p>
-                <p style={{ marginBottom: '0.5rem' }}><strong>Plan:</strong> {selectedRecord.soapNotes.plan}</p>
+                  <h4 style={{ marginBottom: '1rem' }}>SOAP Notes</h4>
+
+                  {["subjective", "objective", "assessment", "plan"].map((field) => (
+                      <div key={field} style={{ marginBottom: '1rem' }}>
+                          <strong style={{ display: 'block', marginBottom: '0.35rem', textTransform: 'capitalize' }}>
+                              {field}
+                          </strong>
+
+                          {editingRecord ? (
+                              <textarea
+                                  className="record-textarea"
+                                  value={editedRecord.soapNotes[field]}
+                                  onChange={(e) =>
+                                      setEditedRecord(prev => ({
+                                          ...prev,
+                                          soapNotes: {
+                                              ...prev.soapNotes,
+                                              [field]: e.target.value
+                                          }
+                                      }))
+                                  }
+                              />
+                          ) : (
+                              <p>{selectedRecord.soapNotes[field]}</p>
+                          )}
+                      </div>
+                  ))}
               </div>
-            )}
+          )}
 
             {selectedRecord.prescription && (
               <div>
                 <h4 style={{ marginBottom: '0.5rem' }}>Prescription</h4>
-                <p style={{ color: '#475569' }}>{selectedRecord.prescription}</p>
-              </div>
+                {editingRecord ? (
+                    <textarea
+                        value={editedRecord.prescription}
+                        onChange={(e) =>
+                            setEditedRecord(prev => ({
+                                ...prev,
+                                prescription: e.target.value
+                            }))
+                        }
+                        className="record-textarea"
+                    />
+                ) : (
+                    <p>{selectedRecord.prescription || 'Not provided'}</p>
+                )}           
+             </div>
             )}
+               <div
+    style={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        gap: '12px',
+        marginTop: '2rem',
+        paddingTop: '1rem',
+        borderTop: '1px solid #e5e7eb'
+    }}
+>
+    {editingRecord ? (
+        <>
+            <button
+                className="secondary-btn"
+                onClick={() => {
+                    setEditingRecord(false);
+
+                    // restore original values
+                    setEditedRecord({
+                        diagnosis: selectedRecord.diagnosis || '',
+                        prescription: selectedRecord.prescription || '',
+                        soapNotes: {
+                            subjective: selectedRecord.soapNotes?.subjective || '',
+                            objective: selectedRecord.soapNotes?.objective || '',
+                            assessment: selectedRecord.soapNotes?.assessment || '',
+                            plan: selectedRecord.soapNotes?.plan || ''
+                        }
+                    });
+                }}
+            >
+                Cancel
+            </button>
+
+            <button
+                className="view-details-btn"
+                onClick={handleUpdateMedicalRecord}
+            >
+                Save Changes
+            </button>
+        </>
+    ) : (
+        <button
+            className="secondary-btn"
+            onClick={() => setSelectedRecord(null)}
+        >
+            Close
+        </button>
+    )}
+</div>
+
           </div>
+          
         </div>
+        
       )}
-
-
+   
     </div>
   );
 };

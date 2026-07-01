@@ -103,6 +103,13 @@ class ApiService {
     });
   }
 
+  async updateMedicalRecord(id, recordData) {
+      return this.request(`/medical-records/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(recordData),
+      });
+  }
+
   // Doctors
   async getDoctors() {
     return this.request('/doctors');
