@@ -52,6 +52,16 @@ const DoctorDashboard = () => {
       patientsThisMonth: 0,
       recentRecords: []
   });
+  const [generatedSoap, setGeneratedSoap] = useState({
+      subjective: '',
+      objective: '',
+      assessment: '',
+      plan: ''
+  });
+
+  const [showSoapReview, setShowSoapReview] = useState(false);
+
+  const [pendingRecord, setPendingRecord] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -209,6 +219,9 @@ const DoctorDashboard = () => {
           try {
               const soapResponse = await apiService.generateSoap(currentTranscript);
               soapNotes = soapResponse.soapNotes;
+              console.log("SOAP Response:", soapResponse);
+              console.log("SOAP Notes:", soapNotes);
+              console.log("Transcript:", currentTranscript);
           } catch (soapError) {
               console.error('SOAP generation failed:', soapError);
           }
@@ -223,20 +236,24 @@ const DoctorDashboard = () => {
           audioFileUrl: audioUrl
       };
 
-      try {
-          await apiService.createMedicalRecord(mockRecord);
-          loadData();
-          setCurrentConsultation(null);
-          setTranscription('');
-          transcriptRef.current = '';
-          setRecordingTime(0);
-          setSelectedPatientId('');
-          setAudioURL(null);
-      } catch (error) {
-          console.error('Error saving record:', error);
-          alert('Failed to save medical record: ' + error.message);
-      }
-  };
+      setGeneratedSoap(soapNotes);
+
+        setPendingRecord({
+            patientId: selectedPatientId,
+            voiceTranscription: currentTranscript || `Consultation recording - ${formatTime(recordingTime)} duration`,
+            diagnosis: '',
+            prescription: '',
+            audioFileUrl: audioUrl
+        });
+
+        setShowSoapReview(true);
+
+        setTranscription('');
+        transcriptRef.current = '';
+        setRecordingTime(0);
+        setSelectedPatientId('');
+        setAudioURL(null);
+        };
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -832,6 +849,102 @@ const filteredRecords = medicalRecords.filter(record => {
 )}
       </div>
 
+      {showSoapReview && (
+          <div
+              style={{
+                  position: 'fixed',
+                  inset: 0,
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  zIndex: 2000
+              }}
+          >
+              <div
+                  style={{
+                      background: '#fff',
+                      width: '90%',
+                      maxWidth: '700px',
+                      maxHeight: '90vh',
+                      overflowY: 'auto',
+                      borderRadius: '12px',
+                      padding: '24px'
+                  }}
+              >
+                  <h2 style={{ marginBottom: '20px' }}>Review SOAP Notes</h2>
+
+                  <label>Subjective</label>
+                  <textarea
+                      value={generatedSoap.subjective}
+                      onChange={(e) =>
+                          setGeneratedSoap(prev => ({
+                              ...prev,
+                              subjective: e.target.value
+                          }))
+                      }
+                      rows={4}
+                      style={{ width: '100%', marginBottom: '16px' }}
+                  />
+
+                  <label>Objective</label>
+                  <textarea
+                      value={generatedSoap.objective}
+                      onChange={(e) =>
+                          setGeneratedSoap(prev => ({
+                              ...prev,
+                              objective: e.target.value
+                          }))
+                      }
+                      rows={4}
+                      style={{ width: '100%', marginBottom: '16px' }}
+                  />
+
+                  <label>Assessment</label>
+                  <textarea
+                      value={generatedSoap.assessment}
+                      onChange={(e) =>
+                          setGeneratedSoap(prev => ({
+                              ...prev,
+                              assessment: e.target.value
+                          }))
+                      }
+                      rows={4}
+                      style={{ width: '100%', marginBottom: '16px' }}
+                  />
+
+                  <label>Plan</label>
+                  <textarea
+                      value={generatedSoap.plan}
+                      onChange={(e) =>
+                          setGeneratedSoap(prev => ({
+                              ...prev,
+                              plan: e.target.value
+                          }))
+                      }
+                      rows={4}
+                      style={{ width: '100%', marginBottom: '24px' }}
+                  />
+
+                  <div
+                      style={{
+                          display: 'flex',
+                          justifyContent: 'flex-end',
+                          gap: '12px'
+                      }}
+                  >
+                      <button onClick={() => setShowSoapReview(false)}>
+                          Cancel
+                      </button>
+
+                      <button>
+                          Save Medical Record
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
       {selectedRecord && (
         <div
           onClick={() => setSelectedRecord(null)}
@@ -912,6 +1025,8 @@ const filteredRecords = medicalRecords.filter(record => {
           </div>
         </div>
       )}
+
+
     </div>
   );
 };
