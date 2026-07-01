@@ -45,6 +45,8 @@ const DoctorDashboard = () => {
   const [recordSearch, setRecordSearch] = useState('');
   const [recordDateFrom, setRecordDateFrom] = useState('');
   const [recordDateTo, setRecordDateTo] = useState('');
+  const [savingRecord, setSavingRecord] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [stats, setStats] = useState({
       totalAppointments: 0,
       totalRecords: 0,
@@ -254,6 +256,41 @@ const DoctorDashboard = () => {
         setSelectedPatientId('');
         setAudioURL(null);
         };
+
+  const handleSaveMedicalRecord = async () => {
+    try {
+        setSavingRecord(true);
+
+        await apiService.createMedicalRecord({
+            ...pendingRecord,
+            soapNotes: generatedSoap
+        });
+
+        setShowSoapReview(false);
+        setPendingRecord(null);
+
+        setGeneratedSoap({
+            subjective: '',
+            objective: '',
+            assessment: '',
+            plan: ''
+        });
+
+        loadData();
+
+        setSaveSuccess(true);
+
+        setTimeout(() => {
+            setSaveSuccess(false);
+        }, 2500);
+
+    } catch (error) {
+        console.error(error);
+        alert('Failed to save medical record: ' + error.message);
+    } finally {
+        setSavingRecord(false);
+    }
+};
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -937,12 +974,41 @@ const filteredRecords = medicalRecords.filter(record => {
                           Cancel
                       </button>
 
-                      <button>
-                          Save Medical Record
+                      <button
+                          onClick={handleSaveMedicalRecord}
+                          disabled={savingRecord}
+                          style={{
+                              padding: '10px 18px',
+                              background: savingRecord ? '#94a3b8' : '#2563eb',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '8px',
+                              cursor: savingRecord ? 'not-allowed' : 'pointer'
+                          }}
+                      >
+                          {savingRecord ? 'Saving...' : 'Save Medical Record'}
                       </button>
                   </div>
               </div>
           </div>
+      )}
+
+      {saveSuccess && (
+        <div
+            style={{
+                position: 'fixed',
+                top: 20,
+                right: 20,
+                background: '#16a34a',
+                color: '#fff',
+                padding: '12px 18px',
+                borderRadius: '8px',
+                boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
+                zIndex: 3000
+            }}
+        >
+            ✅ Medical record saved successfully
+        </div>
       )}
 
       {selectedRecord && (
