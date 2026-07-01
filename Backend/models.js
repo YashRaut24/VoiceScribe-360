@@ -126,6 +126,46 @@ const auditLogSchema = new mongoose.Schema({
 auditLogSchema.index({ userId: 1, createdAt: -1 });
 auditLogSchema.index({ action: 1, createdAt: -1 });
 
+const notificationSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+
+    title: {
+        type: String,
+        required: true
+    },
+
+    message: {
+        type: String,
+        required: true
+    },
+
+    type: {
+        type: String,
+        enum: [
+            'appointment',
+            'medical_record',
+            'system'
+        ],
+        default: 'system'
+    },
+
+    isRead: {
+        type: Boolean,
+        default: false
+    },
+
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+notificationSchema.index({ userId: 1, createdAt: -1 });
+
 module.exports = {
     User: mongoose.model('User', userSchema),
     Appointment: mongoose.model('Appointment', appointmentSchema),
@@ -133,5 +173,6 @@ module.exports = {
     LoginSession: mongoose.model('LoginSession', loginSessionSchema),
     SymptomLog: mongoose.model('SymptomLog', symptomLogSchema),
     SymptomLogDoctor: mongoose.model('SymptomLogDoctor', SymptomLogSchema1),
-    AuditLog: mongoose.model('AuditLog', auditLogSchema)
+    AuditLog: mongoose.model('AuditLog', auditLogSchema),
+    Notification: mongoose.model('Notification', notificationSchema),
 };

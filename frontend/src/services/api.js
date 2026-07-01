@@ -182,6 +182,16 @@ class ApiService {
         method: 'DELETE'
     });
 }
+
+async getNotifications() {
+    return this.request('/notifications');
+}
+
+async markNotificationRead(id) {
+    return this.request(`/notifications/${id}/read`, {
+        method: 'PATCH'
+    });
+}
 }
 
 export default new ApiService();

@@ -17,7 +17,8 @@ import {
   Download,
   Play,
   Pause,
-  Square
+  Square,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../contexts/useAuth';
 import apiService from '../services/api';
@@ -48,6 +49,8 @@ const DoctorDashboard = () => {
   const [recordDateTo, setRecordDateTo] = useState('');
   const [savingRecord, setSavingRecord] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [stats, setStats] = useState({
       totalAppointments: 0,
       totalRecords: 0,
@@ -79,9 +82,20 @@ const DoctorDashboard = () => {
       }
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+    useEffect(() => {
+        loadData();
+
+        const interval = setInterval(async () => {
+            try {
+                const notifications = await apiService.getNotifications();
+                setNotifications(notifications);
+            } catch (error) {
+                console.error(error);
+            }
+        }, 10000);
+
+        return () => clearInterval(interval);
+    }, []);
 
   useEffect(() => {
     let interval;
@@ -101,16 +115,18 @@ const DoctorDashboard = () => {
 
   const loadData = async () => {
       try {
-          const [appointmentsData, recordsData, patientsData, statsData] = await Promise.all([
+          const [appointmentsData, recordsData, patientsData, statsData,notificationsData] = await Promise.all([
               apiService.getAppointments(),
               apiService.getMedicalRecords(),
               apiService.getPatients(),
-              apiService.getDashboardStats()
+              apiService.getDashboardStats(),
+              apiService.getNotifications()
           ]);
           setAppointments(appointmentsData);
           setMedicalRecords(recordsData);
           setPatients(patientsData);
           setStats(statsData);
+          setNotifications(notificationsData);
       } catch (error) {
           console.error('Error loading data:', error);
       } finally {
@@ -393,26 +409,155 @@ const filteredRecords = medicalRecords.filter(record => {
             <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>VoiceScribe</h1>
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span>{user?.firstName} {user?.lastName}</span>
-            <button
-              onClick={handleLogout}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 1rem',
-                backgroundColor: '#ef4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.5rem',
-                cursor: 'pointer'
-              }}
+<div
+    style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+        position: 'relative'
+    }}
+>
+    <span>{user?.firstName} {user?.lastName}</span>
+
+    <button
+        onClick={() => setShowNotifications(!showNotifications)}
+        style={{
+            position: 'relative',
+            width: '42px',
+            height: '42px',
+            borderRadius: '50%',
+            border: '1px solid #e2e8f0',
+            background: 'white',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}
+    >
+        <Bell size={20} />
+
+        {notifications.filter(n => !n.isRead).length > 0 && (
+            <span
+                style={{
+                    position: 'absolute',
+                    top: '-5px',
+                    right: '-5px',
+                    background: '#ef4444',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: '18px',
+                    height: '18px',
+                    fontSize: '11px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}
             >
-              <LogOut size={16} />
-              Logout
-            </button>
-          </div>
+                {notifications.filter(n => !n.isRead).length}
+            </span>
+        )}
+    </button>
+    {showNotifications && (
+    <div
+        style={{
+            position: 'absolute',
+            top: '55px',
+            right: '70px',
+            width: '340px',
+            background: '#fff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '10px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+            zIndex: 2000,
+            maxHeight: '400px',
+            overflowY: 'auto'
+        }}
+    >
+        <div
+            style={{
+                padding: '14px 16px',
+                borderBottom: '1px solid #e5e7eb',
+                fontWeight: 600
+            }}
+        >
+            Notifications
+        </div>
+
+        {notifications.length === 0 ? (
+            <p
+                style={{
+                    padding: '20px',
+                    textAlign: 'center',
+                    color: '#64748b'
+                }}
+            >
+                No notifications
+            </p>
+        ) : (
+            notifications.map((notification) => (
+                <div
+                    key={notification._id}
+                    onClick={async () => {
+                        if (!notification.isRead) {
+                            await apiService.markNotificationRead(notification._id);
+
+                            setNotifications(prev =>
+                                prev.map(n =>
+                                    n._id === notification._id
+                                        ? { ...n, isRead: true }
+                                        : n
+                                )
+                            );
+                        }
+                    }}
+                    style={{
+                        padding: '14px 16px',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid #f1f5f9',
+                        background: notification.isRead
+                            ? '#fff'
+                            : '#eff6ff'
+                    }}
+                >
+                    <strong>{notification.title}</strong>
+
+                    <p
+                        style={{
+                            margin: '6px 0',
+                            fontSize: '14px',
+                            color: '#475569'
+                        }}
+                    >
+                        {notification.message}
+                    </p>
+
+                    <small style={{ color: '#94a3b8' }}>
+                        {formatDate(notification.createdAt)}
+                    </small>
+                </div>
+            ))
+        )}
+    </div>
+)}
+
+    <button
+        onClick={handleLogout}
+        style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.5rem 1rem',
+            backgroundColor: '#ef4444',
+            color: 'white',
+            border: 'none',
+            borderRadius: '0.5rem',
+            cursor: 'pointer'
+        }}
+    >
+        <LogOut size={16} />
+        Logout
+    </button>
+</div>
         </div>
       </header>
 

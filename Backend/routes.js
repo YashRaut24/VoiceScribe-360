@@ -1,5 +1,5 @@
 const express = require('express');
-const { Appointment, MedicalRecord, User, SymptomLog, SymptomLogDoctor } = require('./models');
+const { Appointment, MedicalRecord, User, SymptomLog, SymptomLogDoctor,Notification } = require('./models');
 const auth = require('./middleware/auth.middleware');
 const axios = require('axios');
 const { validate } = require('./middleware/validation.middleware');
@@ -45,6 +45,14 @@ router.post('/appointments', auth, requireRole('patient'), audit('CREATE_APPOINT
     });
     
     await appointment.save();
+    const patient = await User.findById(req.user.userId);
+
+    await Notification.create({
+        userId: doctorId,
+        title: 'New Appointment',
+        message: `${patient.firstName} ${patient.lastName} booked an appointment with you.`,
+        type: 'appointment'
+    });
     await appointment.populate('doctorId', 'firstName lastName specialization');
     await appointment.populate('patientId', 'firstName lastName');
     
@@ -97,6 +105,43 @@ router.get('/medical-records', auth, audit('VIEW_MEDICAL_RECORDS', 'MedicalRecor
   } catch (error) {
     next(error);
   }
+});
+
+router.get('/notifications', auth, async (req, res, next) => {
+    try {
+        const notifications = await Notification.find({
+            userId: req.user.userId
+        }).sort({ createdAt: -1 });
+
+        res.json(notifications);
+
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.patch('/notifications/:id/read', auth, async (req, res, next) => {
+    try {
+        const notification = await Notification.findOne({
+            _id: req.params.id,
+            userId: req.user.userId
+        });
+
+        if (!notification) {
+            return res.status(404).json({
+                message: 'Notification not found'
+            });
+        }
+
+        notification.isRead = true;
+
+        await notification.save();
+
+        res.json(notification);
+
+    } catch (error) {
+        next(error);
+    }
 });
 
 router.post('/medical-records', auth, requireRole('doctor'), audit('CREATE_MEDICAL_RECORD', 'MedicalRecord'), validate(createMedicalRecordSchema), async (req, res, next) => {  try {
