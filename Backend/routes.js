@@ -29,7 +29,7 @@ router.get('/appointments', auth, audit('VIEW_APPOINTMENTS', 'Appointment'), asy
 });
 
 router.post('/appointments', auth, requireRole('patient'), audit('CREATE_APPOINTMENT', 'Appointment'), validate(createAppointmentSchema), async (req, res, next) => {  try {
-    const { doctorId, date, duration, notes } = req.body;
+    const { doctorId, date, duration, notes, type } = req.body;
 
     const doctor = await User.findOne({ _id: doctorId, userType: 'doctor' });
     if (!doctor) {
@@ -41,7 +41,8 @@ router.post('/appointments', auth, requireRole('patient'), audit('CREATE_APPOINT
       patientId: req.user.userId,
       date,
       duration,
-      notes
+      notes,
+      type,
     });
     
     await appointment.save();
