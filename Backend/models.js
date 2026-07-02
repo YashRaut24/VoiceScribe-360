@@ -27,7 +27,8 @@ const appointmentSchema = new mongoose.Schema({
   patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   date: { type: Date, required: true },
   duration: { type: Number, default: 30 },
-  status: { type: String, enum: ['scheduled', 'completed', 'cancelled'], default: 'scheduled' },
+  type: { type: String, enum: ['clinic', 'online'],  default: 'clinic' },
+  status: { type: String, enum: ['pending','accepted','rejected','scheduled','waiting','ongoing','completed','cancelled'],default: 'scheduled'},
   notes: String,
   createdAt: { type: Date, default: Date.now },
 });

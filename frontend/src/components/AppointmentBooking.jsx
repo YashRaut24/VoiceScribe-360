@@ -14,9 +14,10 @@ const AppointmentBooking = () => {
         doctorId: '',
         date: '',
         time: '',
+        type: 'clinic',
         duration: 30,
         notes: ''
-    });
+    });;
 
     useEffect(() => {
         const fetchDoctors = async () => {
@@ -47,6 +48,7 @@ const AppointmentBooking = () => {
             await apiService.createAppointment({
                 doctorId: form.doctorId,
                 date: dateTime,
+                type: form.type,
                 duration: Number(form.duration),
                 notes: form.notes
             });
@@ -101,6 +103,52 @@ const AppointmentBooking = () => {
                             ))}
                         </select>
                     </div>
+
+                    <div>
+                    <label>Consultation Type</label>
+
+                    <div
+                        style={{
+                            display: 'flex',
+                            gap: '16px',
+                            marginTop: '8px'
+                        }}
+                    >
+                        <label
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}
+                        >
+                            <input
+                                type="radio"
+                                name="type"
+                                value="clinic"
+                                checked={form.type === 'clinic'}
+                                onChange={handleChange}
+                            />
+                            Clinic Visit
+                        </label>
+
+                        <label
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}
+                        >
+                            <input
+                                type="radio"
+                                name="type"
+                                value="online"
+                                checked={form.type === 'online'}
+                                onChange={handleChange}
+                            />
+                            Online Consultation
+                        </label>
+                    </div>
+                </div>
 
                     <div>
                         <label>Date</label>
