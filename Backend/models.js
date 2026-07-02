@@ -35,6 +35,82 @@ const appointmentSchema = new mongoose.Schema({
 appointmentSchema.index({ doctorId: 1, date: 1 });
 appointmentSchema.index({ patientId: 1, date: 1 });
 
+const consultationSessionSchema = new mongoose.Schema({
+    appointmentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Appointment',
+        required: true
+    },
+
+    doctorId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+
+    patientId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+
+    consultationType: {
+        type: String,
+        enum: ['clinic', 'online'],
+        default: 'online'
+    },
+
+    status: {
+        type: String,
+        enum: [
+            'pending',
+            'waiting',
+            'ongoing',
+            'completed',
+            'cancelled'
+        ],
+        default: 'pending'
+    },
+
+    roomId: {
+        type: String,
+        required: true
+    },
+
+    startedAt: Date,
+
+    endedAt: Date,
+
+    duration: {
+        type: Number,
+        default: 0
+    },
+
+    transcript: {
+        type: String,
+        default: ''
+    },
+
+    recordingUrl: {
+        type: String,
+        default: ''
+    },
+
+    notes: {
+        type: String,
+        default: ''
+    },
+
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+consultationSessionSchema.index({ doctorId: 1, status: 1 });
+consultationSessionSchema.index({ patientId: 1, status: 1 });
+consultationSessionSchema.index({ appointmentId: 1 });
+
 const medicalRecordSchema = new mongoose.Schema({
   patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -175,4 +251,5 @@ module.exports = {
     SymptomLogDoctor: mongoose.model('SymptomLogDoctor', SymptomLogSchema1),
     AuditLog: mongoose.model('AuditLog', auditLogSchema),
     Notification: mongoose.model('Notification', notificationSchema),
+    ConsultationSession: mongoose.model('ConsultationSession',consultationSessionSchema),
 };
