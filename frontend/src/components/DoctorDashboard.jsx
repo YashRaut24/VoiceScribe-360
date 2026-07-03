@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/useAuth';
 import apiService from '../services/api';
-import socket from '../socket/socket';
+import { useSocket } from '../contexts/SocketContext';
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
@@ -54,7 +54,7 @@ const DoctorDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [consultationRequests, setConsultationRequests] = useState([]);
   const [activeConsultations, setActiveConsultations] = useState([]);
-
+  const socket = useSocket();
   const [stats, setStats] = useState({
       totalAppointments: 0,
       totalRecords: 0,
@@ -89,11 +89,6 @@ const DoctorDashboard = () => {
     useEffect(() => {
         loadData();
 
-        socket.on('connect', () => {
-            console.log('Connected:', socket.id);
-        });
-
-        socket.connect();
 
         console.log('Socket connected?', socket.connected);
         console.log('Socket ID:', socket.id);
@@ -109,10 +104,6 @@ const DoctorDashboard = () => {
 
         return () => {
             clearInterval(interval);
-
-            socket.off('connect');
-
-            socket.disconnect();
         };
     }, []);
 
