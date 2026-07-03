@@ -225,7 +225,8 @@ const notificationSchema = new mongoose.Schema({
         enum: [
             'appointment',
             'medical_record',
-            'system'
+            'system',
+            'consultation'
         ],
         default: 'system'
     },
