@@ -160,6 +160,34 @@ router.get('/my-online-consultations', auth, requireRole('patient'), async (req,
         }
     }
 );
+router.get('/consultation-session/:appointmentId',auth,async (req, res, next) => {
+        try {
+
+            const session = await ConsultationSession.findOne({
+                appointmentId: req.params.appointmentId
+            })
+            .populate(
+                'doctorId',
+                'firstName lastName specialization'
+            )
+            .populate(
+                'patientId',
+                'firstName lastName'
+            );
+
+            if (!session) {
+                return res.status(404).json({
+                    message: 'Consultation session not found'
+                });
+            }
+
+            res.json(session);
+
+        } catch (error) {
+            next(error);
+        }
+    }
+);
 
 router.get('/medical-records', auth, audit('VIEW_MEDICAL_RECORDS', 'MedicalRecord'), async (req, res, next) => {  try {
     const query = req.user.userType === 'doctor' 
