@@ -101,23 +101,36 @@ router.patch('/appointments/:id/status', auth, requireRole('doctor'), async (req
         appointment.status = status;
         await appointment.save();
 
-        if (status === 'accepted') {
+if (status === 'accepted') {
 
-            await ConsultationSession.create({
-                appointmentId: appointment._id,
-                doctorId: appointment.doctorId,
-                patientId: appointment.patientId,
-                roomId: `room_${appointment._id}`
-            });
+    let session = await ConsultationSession.findOne({
+        appointmentId: appointment._id
+    });
 
-            await Notification.create({
-                userId: appointment.patientId,
-                title: 'Consultation Accepted',
-                message: 'Your online consultation has been accepted by the doctor.',
-                type: 'consultation'
-            });
+    if (!session) {
 
-        }
+        session = await ConsultationSession.create({
+            appointmentId: appointment._id,
+            doctorId: appointment.doctorId,
+            patientId: appointment.patientId,
+            roomId: `room_${appointment._id}`,
+            status: 'waiting'
+        });
+
+        await Notification.create({
+            userId: appointment.patientId,
+            title: 'Consultation Accepted',
+            message: 'Your online consultation has been accepted by the doctor.',
+            type: 'consultation'
+        });
+
+    } else {
+
+        session.status = 'waiting';
+        await session.save();
+
+    }
+}
         if (status === 'rejected') {
 
             await Notification.create({
