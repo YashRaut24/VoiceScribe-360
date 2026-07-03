@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import apiService from '../services/api';
-import socket from '../socket/socket';
+import { useSocket } from '../contexts/SocketContext';
 
 const PatientWaitingRoom = () => {
 
@@ -11,6 +11,7 @@ const PatientWaitingRoom = () => {
 
     const [loading, setLoading] = useState(true);
     const [doctorJoined, setDoctorJoined] = useState(false);
+    const socket = useSocket();
 
     useEffect(() => {
 
@@ -18,37 +19,37 @@ const PatientWaitingRoom = () => {
             console.log('Patient Connected:', socket.id);
         });
 
-    socket.connect();
+        socket.connect();
 
-    socket.on('doctor-joined', () => {
+        socket.on('doctor-joined', () => {
 
-        setDoctorJoined(true);
+            setDoctorJoined(true);
 
-        console.log('Doctor joined consultation.');
+            console.log('Doctor joined consultation.');
 
-    });
+        });
 
-    const loadSession = async () => {
+        const loadSession = async () => {
 
-        try {
+            try {
 
-            const data = await apiService.getConsultationSession(
-                appointmentId
-            );
+                const data = await apiService.getConsultationSession(
+                    appointmentId
+                );
 
-            setSession(data);
+                setSession(data);
 
-            socket.emit('join-room', data.roomId);
+                socket.emit('join-room', data.roomId);
 
-            console.log('Joined room:', data.roomId);
+                console.log('Joined room:', data.roomId);
 
-        } catch (error) {
+            } catch (error) {
 
-            console.error(error);
+                console.error(error);
 
-        } finally {
+            } finally {
 
-            setLoading(false);
+                setLoading(false);
 
         }
 
