@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import apiService from '../services/api';
+import socket from '../socket/socket';
 
 const PatientWaitingRoom = () => {
 
@@ -12,31 +13,49 @@ const PatientWaitingRoom = () => {
 
     useEffect(() => {
 
-        const loadSession = async () => {
+        socket.on('connect', () => {
+            console.log('Patient Connected:', socket.id);
+        });
 
-            try {
+    socket.connect();
 
-                const data = await apiService.getConsultationSession(
-                    appointmentId
-                );
+    const loadSession = async () => {
 
-                setSession(data);
+        try {
 
-            } catch (error) {
+            const data = await apiService.getConsultationSession(
+                appointmentId
+            );
 
-                console.error(error);
+            setSession(data);
 
-            } finally {
+            socket.emit('join-room', data.roomId);
 
-                setLoading(false);
+            console.log('Joined room:', data.roomId);
 
-            }
+        } catch (error) {
 
-        };
+            console.error(error);
 
-        loadSession();
+        } finally {
 
-    }, [appointmentId]);
+            setLoading(false);
+
+        }
+
+    };
+
+    loadSession();
+
+    return () => {
+
+        socket.off('connect');
+
+        socket.disconnect();
+
+    };
+
+}, [appointmentId]);
     if (loading) {
         return <h2>Loading...</h2>;
     }
