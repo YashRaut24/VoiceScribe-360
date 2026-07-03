@@ -138,6 +138,29 @@ router.patch('/appointments/:id/status', auth, requireRole('doctor'), async (req
     }
 });
 
+router.get('/my-online-consultations', auth, requireRole('patient'), async (req, res, next) => {
+        try {
+
+            const consultations = await Appointment.find({
+                patientId: req.user.userId,
+                type: 'online'
+            })
+            .populate(
+                'doctorId',
+                'firstName lastName specialization'
+            )
+            .sort({
+                createdAt: -1
+            });
+
+            res.json(consultations);
+
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
 router.get('/medical-records', auth, audit('VIEW_MEDICAL_RECORDS', 'MedicalRecord'), async (req, res, next) => {  try {
     const query = req.user.userType === 'doctor' 
       ? { doctorId: req.user.userId }
