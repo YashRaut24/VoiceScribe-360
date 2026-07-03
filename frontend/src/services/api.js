@@ -77,6 +77,17 @@ class ApiService {
     return this.request('/appointments');
   }
 
+  async getConsultationRequests() {
+    return this.request('/consultation-requests');
+  }
+
+  async updateConsultationStatus(id, status) {
+    return this.request(`/appointments/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status })
+      });
+  }
+
   async createAppointment(appointmentData) {
     return this.request('/appointments', {
       method: 'POST',
