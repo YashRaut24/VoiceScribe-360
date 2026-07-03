@@ -10,6 +10,7 @@ const PatientWaitingRoom = () => {
     const [session, setSession] = useState(null);
 
     const [loading, setLoading] = useState(true);
+    const [doctorJoined, setDoctorJoined] = useState(false);
 
     useEffect(() => {
 
@@ -21,7 +22,9 @@ const PatientWaitingRoom = () => {
 
     socket.on('doctor-joined', () => {
 
-        alert('Doctor has joined the consultation.');
+        setDoctorJoined(true);
+
+        console.log('Doctor joined consultation.');
 
     });
 
@@ -122,25 +125,70 @@ const PatientWaitingRoom = () => {
 
                 </p>
 
-                <p>
+               {doctorJoined ? (
 
-                    Waiting for your doctor...
+                    <>
+                        <div
+                            style={{
+                                marginTop: '2rem',
+                                marginBottom: '1rem',
+                                fontSize: '3rem'
+                            }}
+                        >
+                            🟢
+                        </div>
 
-                </p>
+                        <h3
+                            style={{
+                                color: '#16a34a'
+                            }}
+                        >
+                            Doctor is ready
+                        </h3>
 
-                <div
-                    style={{
-                        marginTop: '2rem',
-                        marginBottom: '2rem',
-                        fontSize: '3rem'
-                    }}
-                >
-                    ⏳
-                </div>
+                        <p>
+                            Your doctor has joined the consultation.
+                        </p>
 
-                <p>
-                    Waiting for your doctor to join...
-                </p>
+                        <button
+                            style={{
+                                marginTop: '1.5rem',
+                                background: '#2563eb',
+                                color: 'white',
+                                border: 'none',
+                                padding: '12px 24px',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '16px'
+                            }}
+                        >
+                            Join Consultation
+                        </button>
+                    </>
+
+                ) : (
+
+                    <>
+                        <p>
+                            Waiting for your doctor...
+                        </p>
+
+                        <div
+                            style={{
+                                marginTop: '2rem',
+                                marginBottom: '2rem',
+                                fontSize: '3rem'
+                            }}
+                        >
+                            ⏳
+                        </div>
+
+                        <p>
+                            Waiting for your doctor to join...
+                        </p>
+                    </>
+
+                )}
             </div>
         </div>
     );

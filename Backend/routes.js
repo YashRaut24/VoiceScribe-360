@@ -105,6 +105,33 @@ router.get('/active-consultations',auth,requireRole('doctor'),async (req, res, n
     }
 );
 
+router.patch('/consultation-session/:id/start',auth,requireRole('doctor'), async (req, res, next) => {
+        try {
+
+            const session = await ConsultationSession.findOne({
+                _id: req.params.id,
+                doctorId: req.user.userId
+            });
+
+            if (!session) {
+                return res.status(404).json({
+                    message: 'Consultation session not found'
+                });
+            }
+
+            session.status = 'ongoing';
+            session.startedAt = new Date();
+
+            await session.save();
+
+            res.json(session);
+
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
 router.patch('/appointments/:id/status', auth, requireRole('doctor'), async (req, res, next) => {
     try {
         const { status } = req.body;

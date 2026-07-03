@@ -777,31 +777,39 @@ const filteredRecords = medicalRecords.filter(record => {
                         </div>
 
                         <button
-                            onClick={() => {
+                            onClick={async () => {
 
-                                socket.emit(
-                                    'join-room',
-                                    consultation.roomId
-                                );
+                                try {
 
-                                socket.emit(
-                                    'doctor-joined',
-                                    consultation.roomId
-                                );
+                                    await apiService.startConsultationSession(
+                                        consultation._id
+                                    );
 
-                                console.log(
-                                    'Doctor joined:',
-                                    consultation.roomId
-                                );
+                                    socket.emit(
+                                        'join-room',
+                                        consultation.roomId
+                                    );
 
-                            }}
-                            style={{
-                                background: '#2563eb',
-                                color: 'white',
-                                border: 'none',
-                                padding: '10px 18px',
-                                borderRadius: '8px',
-                                cursor: 'pointer'
+                                    socket.emit(
+                                        'doctor-joined',
+                                        consultation.roomId
+                                    );
+
+                                    console.log(
+                                        'Doctor joined:',
+                                        consultation.roomId
+                                    );
+
+                                    await loadData();
+
+                                } catch (error) {
+
+                                    console.error(error);
+
+                                    alert(error.message);
+
+                                }
+
                             }}
                         >
                             Start Consultation

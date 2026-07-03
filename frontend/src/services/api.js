@@ -100,6 +100,15 @@ class ApiService {
     return this.request('/active-consultations');
   }
 
+  async startConsultationSession(sessionId) {
+    return this.request(
+        `/consultation-session/${sessionId}/start`,
+        {
+            method: 'PATCH'
+        }
+    );
+  }
+
   async createAppointment(appointmentData) {
     return this.request('/appointments', {
       method: 'POST',
