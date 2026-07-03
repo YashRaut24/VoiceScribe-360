@@ -15,18 +15,23 @@ const PatientDashboard = () => {
         upcomingAppointments: 0
     });
 
+    const [onlineConsultations, setOnlineConsultations] = useState([]);
+
     useEffect(() => {
         const loadMetrics = async () => {
             try {
-                const [symptoms, appointments] = await Promise.all([
+                const [symptoms, appointments, consultations] = await Promise.all([
                     apiService.getSymptoms(),
-                    apiService.getAppointments()
+                    apiService.getAppointments(),
+                    apiService.getMyOnlineConsultations()
                 ]);
 
                 const now = new Date();
                 const upcoming = appointments.filter(a =>
                     new Date(a.date) > now && a.status === 'scheduled'
                 ).length;
+
+                setOnlineConsultations(consultations);
 
                 setMetrics({
                     symptomCount: symptoms.length,
@@ -161,7 +166,83 @@ const PatientDashboard = () => {
           </div>
       </section>
 
-        
+        <section style={{ marginBottom: '2rem' }}>
+
+    <h2 className="section-heading">
+        🌐 Online Consultations
+    </h2>
+
+    {onlineConsultations.length === 0 ? (
+
+        <div
+            style={{
+                background: 'white',
+                padding: '1.5rem',
+                borderRadius: '12px'
+            }}
+        >
+            No online consultations yet.
+        </div>
+
+          ) : (
+
+              onlineConsultations.map((consultation) => (
+
+                  <div
+                      key={consultation._id}
+                      style={{
+                          background: 'white',
+                          padding: '1.5rem',
+                          borderRadius: '12px',
+                          marginBottom: '1rem',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                      }}
+                  >
+
+                      <h3>
+                          Dr. {consultation.doctorId.firstName} {consultation.doctorId.lastName}
+                      </h3>
+
+                      <p>
+                          {consultation.doctorId.specialization}
+                      </p>
+
+                      <p>
+
+                          Status:
+
+                          {consultation.status === 'scheduled' &&
+                              ' 🟡 Pending'}
+
+                          {consultation.status === 'accepted' &&
+                              ' 🟢 Accepted'}
+
+                          {consultation.status === 'rejected' &&
+                              ' 🔴 Rejected'}
+
+                          {consultation.status === 'completed' &&
+                              ' ✅ Completed'}
+
+                      </p>
+
+                      {consultation.status === 'accepted' && (
+
+                          <button
+                              className="journey-action"
+                          >
+                              Join Waiting Room
+                          </button>
+
+                      )}
+
+                  </div>
+
+              ))
+
+          )}
+
+      </section>
+
         <section className="care-journey-section">
           <h2 className="section-heading">Your Complete Care Journey</h2>
           <div className="care-journey-grid">

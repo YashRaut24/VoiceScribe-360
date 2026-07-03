@@ -81,6 +81,10 @@ class ApiService {
     return this.request('/consultation-requests');
   }
 
+  async getMyOnlineConsultations() {
+      return this.request('/my-online-consultations');
+  }
+
   async updateConsultationStatus(id, status) {
     return this.request(`/appointments/${id}/status`, {
         method: 'PATCH',
