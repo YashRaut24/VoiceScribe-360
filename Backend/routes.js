@@ -1,5 +1,5 @@
 const express = require('express');
-const { Appointment, MedicalRecord, User, SymptomLog, SymptomLogDoctor,Notification } = require('./models');
+const { Appointment, MedicalRecord, User, SymptomLog, SymptomLogDoctor,Notification, ConsultationSession, } = require('./models');
 const auth = require('./middleware/auth.middleware');
 const axios = require('axios');
 const { validate } = require('./middleware/validation.middleware');
@@ -63,11 +63,29 @@ router.post('/appointments', auth, requireRole('patient'), audit('CREATE_APPOINT
   }
 });
 
+router.get('/consultation-requests',auth,requireRole('doctor'),async (req, res, next) => {
+        try {
+            const requests = await Appointment.find({
+                doctorId: req.user.userId,
+                type: 'online',
+                status: 'scheduled'
+            })
+                .populate('patientId', 'firstName lastName email')
+                .sort({ date: 1 });
+
+            res.json(requests);
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
 router.patch('/appointments/:id/status', auth, requireRole('doctor'), async (req, res, next) => {
     try {
         const { status } = req.body;
-
-        if (!['scheduled', 'completed', 'cancelled'].includes(status)) {
+        console.log("Received status:", status);
+        console.log("Type:", typeof status);
+        if (!['scheduled', 'accepted','rejected','waiting', 'ongoing', 'completed', 'cancelled'].includes(status)) {
             return res.status(400).json({ message: 'Invalid status value' });
         }
 
@@ -82,6 +100,34 @@ router.patch('/appointments/:id/status', auth, requireRole('doctor'), async (req
 
         appointment.status = status;
         await appointment.save();
+
+        if (status === 'accepted') {
+
+            await ConsultationSession.create({
+                appointmentId: appointment._id,
+                doctorId: appointment.doctorId,
+                patientId: appointment.patientId,
+                roomId: `room_${appointment._id}`
+            });
+
+            await Notification.create({
+                userId: appointment.patientId,
+                title: 'Consultation Accepted',
+                message: 'Your online consultation has been accepted by the doctor.',
+                type: 'consultation'
+            });
+
+        }
+        if (status === 'rejected') {
+
+            await Notification.create({
+                userId: appointment.patientId,
+                title: 'Consultation Rejected',
+                message: 'Your online consultation request was rejected.',
+                type: 'consultation'
+            });
+
+        }
 
         await appointment.populate('doctorId', 'firstName lastName specialization');
         await appointment.populate('patientId', 'firstName lastName');
