@@ -96,6 +96,10 @@ class ApiService {
       });
   }
 
+  async getActiveConsultations() {
+    return this.request('/active-consultations');
+  }
+
   async createAppointment(appointmentData) {
     return this.request('/appointments', {
       method: 'POST',

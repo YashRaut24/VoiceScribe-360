@@ -19,6 +19,12 @@ const PatientWaitingRoom = () => {
 
     socket.connect();
 
+    socket.on('doctor-joined', () => {
+
+        alert('Doctor has joined the consultation.');
+
+    });
+
     const loadSession = async () => {
 
         try {
@@ -50,7 +56,7 @@ const PatientWaitingRoom = () => {
     return () => {
 
         socket.off('connect');
-
+        socket.off('doctor-joined');
         socket.disconnect();
 
     };

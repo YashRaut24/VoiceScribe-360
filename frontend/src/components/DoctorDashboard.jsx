@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/useAuth';
 import apiService from '../services/api';
+import socket from '../socket/socket';
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
@@ -52,6 +53,8 @@ const DoctorDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [consultationRequests, setConsultationRequests] = useState([]);
+  const [activeConsultations, setActiveConsultations] = useState([]);
+
   const [stats, setStats] = useState({
       totalAppointments: 0,
       totalRecords: 0,
@@ -86,6 +89,15 @@ const DoctorDashboard = () => {
     useEffect(() => {
         loadData();
 
+        socket.on('connect', () => {
+            console.log('Connected:', socket.id);
+        });
+
+        socket.connect();
+
+        console.log('Socket connected?', socket.connected);
+        console.log('Socket ID:', socket.id);
+
         const interval = setInterval(async () => {
             try {
                 const notifications = await apiService.getNotifications();
@@ -95,7 +107,13 @@ const DoctorDashboard = () => {
             }
         }, 10000);
 
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+
+            socket.off('connect');
+
+            socket.disconnect();
+        };
     }, []);
 
   useEffect(() => {
@@ -116,13 +134,14 @@ const DoctorDashboard = () => {
 
   const loadData = async () => {
       try {
-          const [appointmentsData, recordsData, patientsData, statsData,notificationsData, consultationRequestsData] = await Promise.all([
+          const [appointmentsData, recordsData, patientsData, statsData,notificationsData, consultationRequestsData,activeConsultationsData] = await Promise.all([
               apiService.getAppointments(),
               apiService.getMedicalRecords(),
               apiService.getPatients(),
               apiService.getDashboardStats(),
               apiService.getNotifications(),
-              apiService.getConsultationRequests()
+              apiService.getConsultationRequests(),
+              apiService.getActiveConsultations()
           ]);
           setAppointments(appointmentsData);
           setMedicalRecords(recordsData);
@@ -130,6 +149,7 @@ const DoctorDashboard = () => {
           setStats(statsData);
           setNotifications(notificationsData);
           setConsultationRequests(consultationRequestsData);
+          setActiveConsultations(activeConsultationsData);
       } catch (error) {
           console.error('Error loading data:', error);
       } finally {
@@ -696,6 +716,100 @@ const filteredRecords = medicalRecords.filter(record => {
     >
         🌐 Online Consultation Requests
     </h3>
+
+    <div
+        style={{
+            backgroundColor: 'white',
+            padding: '1.5rem',
+            borderRadius: '0.5rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            marginBottom: '2rem'
+        }}
+        >
+            <h3
+                style={{
+                    fontSize: '1.25rem',
+                    fontWeight: 'bold',
+                    marginBottom: '1rem'
+                }}
+            >
+                🎥 Active Online Consultations
+            </h3>
+
+            {activeConsultations.length === 0 ? (
+                <p style={{ color: '#64748b' }}>
+                    No active online consultations.
+                </p>
+            ) : (
+                activeConsultations.map((consultation) => (
+                    <div
+                        key={consultation._id}
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '1rem 0',
+                            borderBottom: '1px solid #e2e8f0'
+                        }}
+                    >
+                        <div>
+                            <h4 style={{ margin: 0 }}>
+                                {consultation.patientId.firstName} {consultation.patientId.lastName}
+                            </h4>
+
+                            <p
+                                style={{
+                                    margin: '6px 0',
+                                    color: '#64748b'
+                                }}
+                            >
+                                {formatDate(consultation.appointmentId.date)}
+                            </p>
+
+                            <span
+                                style={{
+                                    color: '#16a34a',
+                                    fontWeight: 600
+                                }}
+                            >
+                                Waiting
+                            </span>
+                        </div>
+
+                        <button
+                            onClick={() => {
+
+                                socket.emit(
+                                    'join-room',
+                                    consultation.roomId
+                                );
+
+                                socket.emit(
+                                    'doctor-joined',
+                                    consultation.roomId
+                                );
+
+                                console.log(
+                                    'Doctor joined:',
+                                    consultation.roomId
+                                );
+
+                            }}
+                            style={{
+                                background: '#2563eb',
+                                color: 'white',
+                                border: 'none',
+                                padding: '10px 18px',
+                                borderRadius: '8px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Start Consultation
+                        </button>
+                                            </div>
+                ))
+            )}
+        </div>
 
     {consultationRequests.length === 0 ? (
         <p style={{ color: '#64748b' }}>

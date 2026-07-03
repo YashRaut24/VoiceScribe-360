@@ -80,6 +80,31 @@ router.get('/consultation-requests',auth,requireRole('doctor'),async (req, res, 
     }
 );
 
+router.get('/active-consultations',auth,requireRole('doctor'),async (req, res, next) => {
+        try {
+
+            const consultations = await ConsultationSession
+                .find({
+                    doctorId: req.user.userId,
+                    status: 'waiting'
+                })
+                .populate(
+                    'patientId',
+                    'firstName lastName email'
+                )
+                .populate(
+                    'appointmentId'
+                )
+                .sort({ createdAt: -1 });
+
+            res.json(consultations);
+
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
 router.patch('/appointments/:id/status', auth, requireRole('doctor'), async (req, res, next) => {
     try {
         const { status } = req.body;

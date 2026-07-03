@@ -8,6 +8,14 @@ function registerConsultationSocket(io, socket) {
 
     });
 
+    socket.on('doctor-joined', (roomId) => {
+
+        console.log(`Doctor joined room: ${roomId}`);
+
+        io.to(roomId).emit('doctor-joined');
+
+    });
+
 }
 
 module.exports = registerConsultationSocket;
