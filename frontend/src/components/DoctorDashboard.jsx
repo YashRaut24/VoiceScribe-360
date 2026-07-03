@@ -51,6 +51,7 @@ const DoctorDashboard = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [consultationRequests, setConsultationRequests] = useState([]);
   const [stats, setStats] = useState({
       totalAppointments: 0,
       totalRecords: 0,
@@ -115,18 +116,20 @@ const DoctorDashboard = () => {
 
   const loadData = async () => {
       try {
-          const [appointmentsData, recordsData, patientsData, statsData,notificationsData] = await Promise.all([
+          const [appointmentsData, recordsData, patientsData, statsData,notificationsData, consultationRequestsData] = await Promise.all([
               apiService.getAppointments(),
               apiService.getMedicalRecords(),
               apiService.getPatients(),
               apiService.getDashboardStats(),
-              apiService.getNotifications()
+              apiService.getNotifications(),
+              apiService.getConsultationRequests()
           ]);
           setAppointments(appointmentsData);
           setMedicalRecords(recordsData);
           setPatients(patientsData);
           setStats(statsData);
           setNotifications(notificationsData);
+          setConsultationRequests(consultationRequestsData);
       } catch (error) {
           console.error('Error loading data:', error);
       } finally {
@@ -675,9 +678,118 @@ const filteredRecords = medicalRecords.filter(record => {
               borderRadius: '0.5rem',
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Recent Medical Records</h3>
-              {stats.recentRecords.map((record, index) => (
-                <div key={index} style={{
+                <div
+    style={{
+        backgroundColor: 'white',
+        padding: '1.5rem',
+        borderRadius: '0.5rem',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        marginBottom: '2rem'
+    }}
+>
+    <h3
+        style={{
+            fontSize: '1.25rem',
+            fontWeight: 'bold',
+            marginBottom: '1rem'
+        }}
+    >
+        🌐 Online Consultation Requests
+    </h3>
+
+    {consultationRequests.length === 0 ? (
+        <p style={{ color: '#64748b' }}>
+            No pending online consultation requests.
+        </p>
+    ) : (
+        consultationRequests.map((request) => (
+            <div
+                key={request._id}
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '1rem 0',
+                    borderBottom: '1px solid #e2e8f0'
+                }}
+            >
+                    <div>
+                        <h4
+                            style={{
+                                margin: 0,
+                                fontWeight: 600
+                            }}
+                        >
+                            {request.patientId.firstName} {request.patientId.lastName}
+                        </h4>
+
+                        <p
+                            style={{
+                                margin: '4px 0',
+                                color: '#64748b'
+                            }}
+                        >
+                            {formatDate(request.date)}
+                        </p>
+                    </div>
+
+                        <div
+                            style={{
+                                display: 'flex',
+                                gap: '10px'
+                            }}
+                        >
+                        <button
+                            onClick={async () => {
+                                try {
+
+                                    await apiService.updateConsultationStatus(
+                                        request._id,
+                                        'accepted'
+                                    );
+
+                                    await loadData();
+
+                                    alert('Consultation accepted successfully.');
+
+                                } catch (error) {
+
+                                    alert(error.message);
+
+                                }
+                            }}
+                            style={{
+                                background: '#16a34a',
+                                color: 'white',
+                                border: 'none',
+                                padding: '8px 14px',
+                                borderRadius: '6px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Accept
+</button>
+
+                            <button
+                                style={{
+                                    background: '#dc2626',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '8px 14px',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Reject
+                            </button>
+                            </div>
+                        </div>
+                    ))
+                )}
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Recent Medical Records</h3>
+                {stats.recentRecords.map((record, index) => (
+                    <div key={index} style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
