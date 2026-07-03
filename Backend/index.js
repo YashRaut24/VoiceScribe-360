@@ -5,12 +5,13 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const mongoSanitize = require('express-mongo-sanitize');
-
+const http = require('http');
 const errorHandler = require('./middleware/error.middleware');
 const authRoutes = require('./auth');
 const apiRoutes = require('./routes');
-
+const { initializeSocket } = require('./socket/socket');
 const app = express();
+const server = http.createServer(app);
 const port = process.env.PORT || 3000;
 
 const authLimiter = rateLimit({
@@ -84,6 +85,8 @@ app.get('/health', (req, res) => {
 app.use(errorHandler);
 
 
-app.listen(port, () => {
+initializeSocket(server);
+
+server.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
