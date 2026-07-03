@@ -227,11 +227,14 @@ const PatientDashboard = () => {
 
                       {consultation.status === 'accepted' && (
 
-                          <button
-                              className="journey-action"
-                          >
-                              Join Waiting Room
-                          </button>
+                        <button
+                            className="journey-action"
+                            onClick={() =>
+                              navigate(`/patient/waiting-room/${consultation._id}`)       
+                            }
+                        >
+                            Join Waiting Room
+                        </button>
 
                       )}
 
