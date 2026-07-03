@@ -11,51 +11,54 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AppointmentBooking from './components/AppointmentBooking';
 import PatientTimeline from './components/PatientTimeline';
 import PatientWaitingRoom from './components/PatientWaitingRoom';
+import SocketProvider from './contexts/SocketProvider';
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          
-          <Route path="/doctor-dashboard" element={
-            <ProtectedRoute userType="doctor">
-              <DoctorDashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/patient-dashboard" element={
-            <ProtectedRoute userType="patient">
-              <PatientDashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/patient/log-symptoms" element={
-            <ProtectedRoute userType="patient">
-              <SymptomLogging />
-            </ProtectedRoute>
+       <SocketProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            
+            <Route path="/doctor-dashboard" element={
+              <ProtectedRoute userType="doctor">
+                <DoctorDashboard />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/patient-dashboard" element={
+              <ProtectedRoute userType="patient">
+                <PatientDashboard />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/patient/log-symptoms" element={
+              <ProtectedRoute userType="patient">
+                <SymptomLogging />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/patient/book-appointment" element={
+              <ProtectedRoute userType="patient">
+                  <AppointmentBooking />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/patient/timeline" element={
+              <ProtectedRoute userType="patient">
+                  <PatientTimeline />
+              </ProtectedRoute>
           } />
 
-          <Route path="/patient/book-appointment" element={
-            <ProtectedRoute userType="patient">
-                <AppointmentBooking />
-            </ProtectedRoute>
-          } />
-
-          <Route path="/patient/timeline" element={
-            <ProtectedRoute userType="patient">
-                <PatientTimeline />
-            </ProtectedRoute>
-        } />
-
-        <Route path="/patient/waiting-room/:appointmentId"element={<PatientWaitingRoom />}/>
-          
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+          <Route path="/patient/waiting-room/:appointmentId"element={<PatientWaitingRoom />}/>
+            
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </SocketProvider>
     </AuthProvider>
   );
 }
