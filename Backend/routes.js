@@ -132,6 +132,49 @@ router.patch('/consultation-session/:id/start',auth,requireRole('doctor'), async
     }
 );
 
+router.patch(
+    '/consultation-session/:id/end',
+    auth,
+    requireRole('doctor'),
+    async (req, res, next) => {
+
+        try {
+
+            const session = await ConsultationSession.findOne({
+                _id: req.params.id,
+                doctorId: req.user.userId
+            });
+
+            if (!session) {
+                return res.status(404).json({
+                    message: 'Consultation session not found'
+                });
+            }
+
+            session.status = 'completed';
+            session.endedAt = new Date();
+
+            if (session.startedAt) {
+
+                session.duration = Math.floor(
+                    (session.endedAt - session.startedAt) / 1000
+                );
+
+            }
+
+            await session.save();
+
+            res.json(session);
+
+        } catch (error) {
+
+            next(error);
+
+        }
+
+    }
+);
+
 router.patch('/appointments/:id/status', auth, requireRole('doctor'), async (req, res, next) => {
     try {
         const { status } = req.body;
@@ -254,6 +297,34 @@ router.get('/consultation-session/:appointmentId',auth,async (req, res, next) =>
     }
 );
 
+router.get('/consultation-session/:id/details', auth, async (req, res, next) => {
+        try {
+
+            const session = await ConsultationSession
+                .findById(req.params.id)
+                .populate(
+                    'doctorId',
+                    'firstName lastName specialization'
+                )
+                .populate(
+                    'patientId',
+                    'firstName lastName'
+                );
+
+            if (!session) {
+                return res.status(404).json({
+                    message: 'Consultation session not found'
+                });
+            }
+
+            res.json(session);
+
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
 router.get('/medical-records', auth, audit('VIEW_MEDICAL_RECORDS', 'MedicalRecord'), async (req, res, next) => {  try {
     const query = req.user.userType === 'doctor' 
       ? { doctorId: req.user.userId }
@@ -306,6 +377,8 @@ router.patch('/notifications/:id/read', auth, async (req, res, next) => {
         next(error);
     }
 });
+
+
 
 router.post('/medical-records', auth, requireRole('doctor'), audit('CREATE_MEDICAL_RECORD', 'MedicalRecord'), validate(createMedicalRecordSchema), async (req, res, next) => {  try {
     const { patientId, appointmentId, voiceTranscription, soapNotes, diagnosis, prescription, audioFileUrl } = req.body;
