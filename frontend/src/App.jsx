@@ -12,6 +12,7 @@ import AppointmentBooking from './components/AppointmentBooking';
 import PatientTimeline from './components/PatientTimeline';
 import PatientWaitingRoom from './components/PatientWaitingRoom';
 import SocketProvider from './contexts/SocketProvider';
+import ConsultationRoom from './components/ConsultationRoom';
 
 function App() {
   return (
@@ -55,6 +56,15 @@ function App() {
 
           <Route path="/patient/waiting-room/:appointmentId"element={<PatientWaitingRoom />}/>
             
+            <Route
+                path="/consultation/:sessionId"
+                element={
+                    <ProtectedRoute>
+                        <ConsultationRoom />
+                    </ProtectedRoute>
+                }
+            />
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
