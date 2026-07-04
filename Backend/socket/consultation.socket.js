@@ -1,20 +1,81 @@
-function registerConsultationSocket(io, socket) {
+const rooms = new Map();
 
-    socket.on('join-room', (roomId) => {
+function registerConsultationSocket(io, socket) {
+    
+
+    socket.on('join-room', ({ roomId, role }) => {
 
         socket.join(roomId);
 
-        console.log(`${socket.id} joined ${roomId}`);
+        // Save information on this socket
+        socket.roomId = roomId;
+        socket.role = role;
+
+        // Create room if it doesn't exist
+        if (!rooms.has(roomId)) {
+            rooms.set(roomId, {
+                doctorConnected: false,
+                patientConnected: false
+            });
+        }
+
+        const room = rooms.get(roomId);
+
+        // Update room state
+        if (role === 'doctor') {
+            room.doctorConnected = true;
+        }
+
+        if (role === 'patient') {
+            room.patientConnected = true;
+        }
+
+        console.log(roomId, room);
+
+        console.log("Broadcasting:", room);
+        io.to(roomId).emit('participant-update', room);
+
+});
+
+    socket.on('end-consultation', (roomId) => {
+
+        io.to(roomId).emit('consultation-ended');
+
+        console.log(`Consultation ended: ${roomId}`);
 
     });
 
-    socket.on('doctor-joined', (roomId) => {
+    socket.on('disconnect', () => {
 
-        console.log(`Doctor joined room: ${roomId}`);
+        if (!socket.roomId) return;
 
-        io.to(roomId).emit('doctor-joined');
+        const room = rooms.get(socket.roomId);
+
+        if (!room) return;
+
+        if (socket.role === 'doctor') {
+            room.doctorConnected = false;
+        }
+
+        if (socket.role === 'patient') {
+            room.patientConnected = false;
+        }
+
+        io.to(socket.roomId).emit(
+            'participant-update',
+            room
+        );
+
+        console.log(`${socket.role} disconnected from ${socket.roomId}`);
+
+        // Optional cleanup
+        if (!room.doctorConnected && !room.patientConnected) {
+            rooms.delete(socket.roomId);
+        }
 
     });
+    
+
 
 }
 
