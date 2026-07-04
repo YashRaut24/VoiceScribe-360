@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import apiService from '../services/api';
 import { useSocket } from '../contexts/SocketContext';
+import { useNavigate } from 'react-router-dom';
 
 const PatientWaitingRoom = () => {
 
@@ -10,22 +11,24 @@ const PatientWaitingRoom = () => {
     const [session, setSession] = useState(null);
 
     const [loading, setLoading] = useState(true);
-    const [doctorJoined, setDoctorJoined] = useState(false);
+    const [doctorConnected, setDoctorConnected] = useState(false);
     const socket = useSocket();
-
+    const navigate = useNavigate();
     useEffect(() => {
 
         socket.on('connect', () => {
             console.log('Patient Connected:', socket.id);
         });
 
-        socket.connect();
 
-        socket.on('doctor-joined', () => {
+       socket.on('participant-update', ({ doctorConnected, patientConnected }) => {
 
-            setDoctorJoined(true);
+            console.log('Waiting room update:', {
+                doctorConnected,
+                patientConnected
+            });
 
-            console.log('Doctor joined consultation.');
+            setDoctorConnected(doctorConnected);
 
         });
 
@@ -33,13 +36,23 @@ const PatientWaitingRoom = () => {
 
             try {
 
-                const data = await apiService.getConsultationSession(
-                    appointmentId
-                );
+                const data = await apiService.getConsultationSessionByAppointment(appointmentId)
 
                 setSession(data);
 
-                socket.emit('join-room', data.roomId);
+               if (socket.connected) {
+                    socket.emit('join-room', {
+                        roomId: data.roomId,
+                        role: 'patient'
+                    });
+                } else {
+                    socket.once('connect', () => {
+                        socket.emit('join-room', {
+                            roomId: data.roomId,
+                            role: 'patient'
+                        });
+                    });
+                }
 
                 console.log('Joined room:', data.roomId);
 
@@ -60,8 +73,7 @@ const PatientWaitingRoom = () => {
     return () => {
 
         socket.off('connect');
-        socket.off('doctor-joined');
-        socket.disconnect();
+        socket.off('participant-update');
 
     };
 
@@ -126,7 +138,7 @@ const PatientWaitingRoom = () => {
 
                 </p>
 
-               {doctorJoined ? (
+               {doctorConnected ? (
 
                     <>
                         <div
@@ -152,6 +164,9 @@ const PatientWaitingRoom = () => {
                         </p>
 
                         <button
+                            onClick={() => {
+                                navigate(`/consultation/${session._id}`);
+                            }}
                             style={{
                                 marginTop: '1.5rem',
                                 background: '#2563eb',
