@@ -224,6 +224,7 @@ const DoctorDashboard = () => {
 
         await loadData();
 
+
         setSelectedRecord(updatedRecord);
 
         setEditingRecord(false);
@@ -776,10 +777,10 @@ const filteredRecords = medicalRecords.filter(record => {
                                         consultation._id
                                     );
 
-                                    socket.emit(
-                                        'join-room',
-                                        consultation.roomId
-                                    );
+                                    socket.emit('join-room', {
+                                        roomId: consultation.roomId,
+                                        role: 'doctor'
+                                    });
 
                                     socket.emit(
                                         'doctor-joined',
@@ -792,6 +793,8 @@ const filteredRecords = medicalRecords.filter(record => {
                                     );
 
                                     await loadData();
+                                    navigate(`/consultation/${consultation._id}`);
+
 
                                 } catch (error) {
 
