@@ -25,9 +25,14 @@ class ApiService {
       ...options,
     };
 
-    if (this.token) {
-      config.headers.Authorization = `Bearer ${this.token}`;
+    const token = localStorage.getItem('token');
+
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log("Request:", url);
+    console.log("Token:", this.token);
+    console.log("Headers:", config.headers);
 
     const response = await fetch(url, config);
     const data = await response.json();
@@ -85,8 +90,8 @@ class ApiService {
       return this.request('/my-online-consultations');
   }
 
-  async getConsultationSession(appointmentId) {
-    return this.request(`/consultation-session/${appointmentId}`);
+  async getConsultationSessionByAppointment(appointmentId) {
+      return this.request(`/consultation-session/${appointmentId}`);
   }
 
   async updateConsultationStatus(id, status) {
@@ -94,6 +99,12 @@ class ApiService {
         method: 'PATCH',
         body: JSON.stringify({ status })
       });
+  }
+
+  async getConsultationSession(sessionId) {
+    return this.request(
+        `/consultation-session/${sessionId}/details`
+    );
   }
 
   async getActiveConsultations() {
@@ -108,6 +119,16 @@ class ApiService {
         }
     );
   }
+
+    async endConsultationSession(sessionId) {
+      return this.request(
+          `/consultation-session/${sessionId}/end`,
+          {
+              method: 'PATCH'
+          }
+      );
+  }
+
 
   async createAppointment(appointmentData) {
     return this.request('/appointments', {
