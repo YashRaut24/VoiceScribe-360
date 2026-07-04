@@ -32,6 +32,8 @@ export const AuthProvider = ({ children }) => {
                 return;
             }
 
+            apiService.setToken(token);
+
             try {
                 const response = await apiService.verifyToken();
                 setUser(response.user);
