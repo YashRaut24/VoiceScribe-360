@@ -23,10 +23,15 @@ const AppointmentBooking = () => {
         const fetchDoctors = async () => {
             try {
                 const data = await apiService.getDoctors();
+
+                console.log("Doctors returned:", data);
+
                 setDoctors(data);
             } catch (error) {
-                console.error('Failed to fetch doctors:', error);
-            } finally {
+                console.error("Doctor fetch failed");
+                console.error(error);
+                alert(error.message);
+            }finally {
                 setLoadingDoctors(false);
             }
         };
