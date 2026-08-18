@@ -119,7 +119,40 @@ class ApiService {
         }
     );
   }
+async transcribeAudio(audioBlob) {
 
+    const formData = new FormData();
+
+    formData.append(
+        'audio',
+        audioBlob,
+        'consultation.webm'
+    );
+
+    const url = `${API_BASE_URL}/transcribe-audio`;
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${this.token}`
+        },
+        body: formData
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        const err = new Error(
+            data.message || 'Transcription failed'
+        );
+
+        err.errors = data.errors || [];
+
+        throw err;
+    }
+
+    return data;
+}
     async endConsultationSession(sessionId) {
       return this.request(
           `/consultation-session/${sessionId}/end`,
