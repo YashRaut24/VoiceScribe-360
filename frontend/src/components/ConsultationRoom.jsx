@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import apiService from '../services/api';
 import { useSocket } from '../contexts/SocketContext';
@@ -13,6 +13,15 @@ function ConsultationRoom() {
     const socket = useSocket();
     const [doctorConnected, setDoctorConnected] = useState(false);
     const [patientConnected, setPatientConnected] = useState(false);
+    const [transcript, setTranscript] = useState('');
+    const [isRecording, setIsRecording] = useState(false);
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
+    const [transcribing, setTranscribing] = useState(false);
+    const [soapNotes, setSoapNotes] = useState(null);
+    const [generatingSoap, setGeneratingSoap] = useState(false);
+    const [savingRecord, setSavingRecord] = useState(false);
+    const [recordSaved, setRecordSaved] = useState(false);
     const { user } = useAuth();
     const navigate = useNavigate();
     useEffect(() => {
@@ -40,6 +49,39 @@ function ConsultationRoom() {
         };
 
     }, [socket]);
+
+    useEffect(() => {
+
+    if (!socket) return;
+
+    const handleTranscriptUpdate = ({ transcript }) => {
+
+        setTranscript(prev => {
+
+            if (!prev) {
+                return transcript;
+            }
+
+            return `${prev} ${transcript}`;
+        });
+
+    };
+
+    socket.on(
+        'transcript-update',
+        handleTranscriptUpdate
+    );
+
+    return () => {
+
+        socket.off(
+            'transcript-update',
+            handleTranscriptUpdate
+        );
+
+    };
+
+}, [socket]);
 
     useEffect(() => {
 
@@ -137,8 +179,152 @@ function ConsultationRoom() {
         return <h2>Consultation not found.</h2>;
     }
 
+    const startRecording = async () => {
 
-    
+        try {
+
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: true
+            });
+
+            const mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorderRef.current = mediaRecorder;
+
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+
+            };
+
+            mediaRecorder.onstop = async () => {
+
+                stream.getTracks().forEach(
+                    track => track.stop()
+                );
+
+                const audioBlob = new Blob(
+                    audioChunksRef.current,
+                    {
+                        type: 'audio/webm'
+                    }
+                );
+
+                try {
+
+                    setTranscribing(true);
+
+                    const result = await apiService.transcribeAudio(audioBlob);
+
+                    setTranscript(result.transcript);
+
+                } catch (error) {
+
+                    console.error(
+                        'Transcription failed:',
+                        error
+                    );
+
+                    alert(error.message);
+
+                } finally {
+
+                    setTranscribing(false);
+
+                }
+
+            };
+
+            mediaRecorder.start();
+
+            setIsRecording(true);
+
+        } catch (error) {
+
+            console.error(
+                'Microphone error:',
+                error
+            );
+
+            alert(
+                'Unable to access microphone.'
+            );
+
+        }
+
+    };
+    const stopRecording = () => {
+
+    if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state !== 'inactive'
+    ) {
+
+        mediaRecorderRef.current.stop();
+
+        setIsRecording(false);
+
+    }
+
+};
+const handleSaveMedicalRecord = async () => {
+    if (!soapNotes) {
+        alert('Generate SOAP notes first.');
+        return;
+    }
+
+    try {
+        setSavingRecord(true);
+
+        await apiService.createMedicalRecord({
+            patientId: session.patientId._id,
+            appointmentId: session.appointmentId?._id,
+            voiceTranscription: transcript,
+            soapNotes: {
+                subjective: soapNotes.subjective,
+                objective: soapNotes.objective,
+                assessment: soapNotes.assessment,
+                plan: soapNotes.plan
+            }
+        });
+
+        setRecordSaved(true);
+
+        alert('Medical record saved successfully.');
+
+    } catch (error) {
+        console.error('Failed to save medical record:', error);
+        alert(error.message || 'Failed to save medical record');
+
+    } finally {
+        setSavingRecord(false);
+    }
+};
+    const handleGenerateSoap = async () => {
+        if (!transcript.trim()) {
+            alert('No transcript available.');
+            return;
+        }
+
+        try {
+            setGeneratingSoap(true);
+
+            const result = await apiService.generateSoap(transcript);
+
+            setSoapNotes(result.soapNotes);
+
+        } catch (error) {
+            console.error('SOAP generation failed:', error);
+            alert(error.message || 'Failed to generate SOAP notes');
+
+        } finally {
+            setGeneratingSoap(false);
+        }
+    };
 
     return (
         <div
@@ -192,20 +378,220 @@ function ConsultationRoom() {
                 </p>
 
                 <hr />
-
                 <h2>Transcript</h2>
 
                 <div
                     style={{
-                        height: '250px',
+                        minHeight: '250px',
                         background: '#f8fafc',
                         border: '1px solid #e2e8f0',
                         borderRadius: '8px',
-                        padding: '1rem'
+                        padding: '1rem',
+                        whiteSpace: 'pre-wrap'
                     }}
                 >
-                    Waiting for conversation...
+                    {transcript || 'Waiting for conversation...'}
                 </div>
+
+                <button
+                    onClick={handleGenerateSoap}
+                    disabled={!transcript || generatingSoap}
+                    style={{
+                        marginTop: '1rem',
+                        padding: '12px 20px',
+                        border: 'none',
+                        borderRadius: '8px',
+                        background: '#2563eb',
+                        color: 'white',
+                        cursor: transcript && !generatingSoap
+                            ? 'pointer'
+                            : 'not-allowed'
+                    }}
+                >
+                    {generatingSoap
+                        ? 'Generating SOAP Notes...'
+                        : 'Generate SOAP Notes'}
+                </button>
+
+                {soapNotes && (
+                    <div
+                        style={{
+                            marginTop: '2rem',
+                            padding: '1.5rem',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '10px',
+                            background: '#ffffff'
+                        }}
+                    >
+                        <h2>SOAP Notes</h2>
+
+                        <div style={{ marginTop: '1.5rem' }}>
+                            <h3>Subjective</h3>
+
+                            <textarea
+                                value={soapNotes.subjective}
+                                onChange={(e) =>
+                                    setSoapNotes({
+                                        ...soapNotes,
+                                        subjective: e.target.value
+                                    })
+                                }
+                                style={{
+                                    width: '100%',
+                                    minHeight: '100px',
+                                    padding: '12px',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '8px',
+                                    resize: 'vertical',
+                                    fontSize: '15px'
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ marginTop: '1.5rem' }}>
+                            <h3>Objective</h3>
+
+                            <textarea
+                                value={soapNotes.objective}
+                                onChange={(e) =>
+                                    setSoapNotes({
+                                        ...soapNotes,
+                                        objective: e.target.value
+                                    })
+                                }
+                                style={{
+                                    width: '100%',
+                                    minHeight: '100px',
+                                    padding: '12px',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '8px',
+                                    resize: 'vertical',
+                                    fontSize: '15px'
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ marginTop: '1.5rem' }}>
+                            <h3>Assessment</h3>
+
+                            <textarea
+                                value={soapNotes.assessment}
+                                onChange={(e) =>
+                                    setSoapNotes({
+                                        ...soapNotes,
+                                        assessment: e.target.value
+                                    })
+                                }
+                                style={{
+                                    width: '100%',
+                                    minHeight: '100px',
+                                    padding: '12px',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '8px',
+                                    resize: 'vertical',
+                                    fontSize: '15px'
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ marginTop: '1.5rem' }}>
+                            <h3>Plan</h3>
+
+                            <textarea
+                                value={soapNotes.plan}
+                                onChange={(e) =>
+                                    setSoapNotes({
+                                        ...soapNotes,
+                                        plan: e.target.value
+                                    })
+                                }
+                                style={{
+                                    width: '100%',
+                                    minHeight: '100px',
+                                    padding: '12px',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '8px',
+                                    resize: 'vertical',
+                                    fontSize: '15px'
+                                }}
+                            />
+                        </div>
+
+                        <button
+                            onClick={handleSaveMedicalRecord}
+                            disabled={savingRecord || recordSaved}
+                            style={{
+                                marginTop: '2rem',
+                                padding: '12px 24px',
+                                border: 'none',
+                                borderRadius: '8px',
+                                background: recordSaved
+                                    ? '#16a34a'
+                                    : '#2563eb',
+                                color: 'white',
+                                cursor: savingRecord || recordSaved
+                                    ? 'not-allowed'
+                                    : 'pointer',
+                                fontSize: '16px'
+                            }}
+                        >
+                            {recordSaved
+                                ? '✓ Medical Record Saved'
+                                : savingRecord
+                                    ? 'Saving...'
+                                    : 'Save Medical Record'}
+                        </button>
+                    </div>
+                )}
+                {user.userType === 'doctor' && (
+                    <div
+                        style={{
+                            marginTop: '1rem',
+                            display: 'flex',
+                            gap: '10px'
+                        }}
+                    >
+
+                    <div style={{ marginTop: '2rem' }}>
+
+                        {!isRecording ? (
+
+                            <button
+                                onClick={startRecording}
+                                style={{
+                                    background: '#16a34a',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '12px 24px',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Start Recording
+                            </button>
+
+                        ) : (
+
+                            <button
+                                onClick={stopRecording}
+                                style={{
+                                    background: '#dc2626',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '12px 24px',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Stop Recording
+                            </button>
+
+                        )}
+
+                    </div>
+
+                    </div>
+                )}
 
                 <div
                     style={{
