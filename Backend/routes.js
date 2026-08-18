@@ -10,6 +10,8 @@ const requireRole = require('./middleware/role.middleware');
 const upload = require('./middleware/upload.middleware');
 const audit = require('./middleware/audit.middleware');
 const router = express.Router();
+const FormData = require('form-data');
+const fs = require('fs');
 
 router.get('/appointments', auth, audit('VIEW_APPOINTMENTS', 'Appointment'), async (req, res, next) => {
   try {
@@ -129,6 +131,60 @@ router.patch('/consultation-session/:id/start',auth,requireRole('doctor'), async
         } catch (error) {
             next(error);
         }
+    }
+);
+
+router.post(
+    '/transcribe-audio',
+    auth,
+    requireRole('doctor'),
+    upload.single('audio'),
+    async (req, res, next) => {
+
+        try {
+
+            if (!req.file) {
+                return res.status(400).json({
+                    message: 'No audio file uploaded'
+                });
+            }
+
+            const formData = new FormData();
+
+            formData.append(
+                'audio',
+                fs.createReadStream(req.file.path),
+                {
+                    filename: req.file.originalname,
+                    contentType: req.file.mimetype
+                }
+            );
+
+            const response = await axios.post(
+                'http://localhost:5000/transcribe',
+                formData,
+                {
+                    headers: {
+                        ...formData.getHeaders()
+                    }
+                }
+            );
+
+            res.json({
+                transcript: response.data.transcript
+            });
+
+        } catch (error) {
+
+            console.error(
+                'Transcription error:',
+                error.response?.data || error.message
+            );
+
+            next(error);
+
+        }
+
     }
 );
 
@@ -309,6 +365,9 @@ router.get('/consultation-session/:id/details', auth, async (req, res, next) => 
                 .populate(
                     'patientId',
                     'firstName lastName'
+                )
+                .populate(
+                    'appointmentId'
                 );
 
             if (!session) {
@@ -474,13 +533,15 @@ router.post('/generate-soap', auth, requireRole('doctor'), audit('GENERATE_SOAP'
 
         res.json(response.data);
 
-    }catch (error) {
-        if (error.response?.data) {
-            error.message = 'SOAP generation failed';
-        }
+        } catch (error) {
 
-        next(error);
-    }
+            console.error(
+                'SOAP GENERATION ERROR:',
+                error.response?.data || error.message
+            );
+
+            next(error);
+        }
 });
 
 router.post('/analyze-symptoms', auth, requireRole('patient'), audit('ANALYZE_SYMPTOMS', 'SymptomLog'), async (req, res, next) => {
