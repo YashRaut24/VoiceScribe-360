@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from llm import run_llm, generate_soap_notes, analyze_symptoms_for_patient
+from llm import run_llm, generate_soap_notes, analyze_symptoms_for_patient,transcribe_audio
 
 app = Flask(__name__)
 
@@ -45,6 +45,10 @@ def generate_soap():
         })
 
     except Exception as e:
+        print("SOAP ERROR:", repr(e))
+        import traceback
+        traceback.print_exc()
+
         return jsonify({
             "error": "SOAP generation failed",
             "details": str(e)
@@ -71,6 +75,34 @@ def analyze_symptoms():
     except Exception as e:
         return jsonify({
             "error": "Analysis failed",
+            "details": str(e)
+        }), 500
+
+
+@app.route('/transcribe', methods=['POST'])
+def transcribe():
+    if 'audio' not in request.files:
+        return jsonify({
+            "error": "Audio file is required"
+        }), 400
+
+    audio_file = request.files['audio']
+
+    if not audio_file.filename:
+        return jsonify({
+            "error": "Audio filename is missing"
+        }), 400
+
+    try:
+        transcript = transcribe_audio(audio_file)
+
+        return jsonify({
+            "transcript": transcript
+        })
+
+    except Exception as e:
+        return jsonify({
+            "error": "Transcription failed",
             "details": str(e)
         }), 500
 
