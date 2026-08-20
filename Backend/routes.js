@@ -357,7 +357,13 @@ router.get('/consultation-session/:id/details', auth, async (req, res, next) => 
         try {
 
             const session = await ConsultationSession
-                .findById(req.params.id)
+                .findOne({
+                    _id: req.params.id,
+                    $or: [
+                        { doctorId: req.user.userId },
+                        { patientId: req.user.userId }
+                    ]
+                })
                 .populate(
                     'doctorId',
                     'firstName lastName specialization'
@@ -383,6 +389,56 @@ router.get('/consultation-session/:id/details', auth, async (req, res, next) => 
         }
     }
 );
+
+router.patch('/consultation-session/:id/content', auth, async (req, res, next) => {
+    try {
+        const session = await ConsultationSession.findOne({
+            _id: req.params.id,
+            $or: [
+                { doctorId: req.user.userId },
+                { patientId: req.user.userId }
+            ]
+        });
+
+        if (!session) {
+            return res.status(404).json({
+                message: 'Consultation session not found'
+            });
+        }
+
+        const { transcript, soapNotes } = req.body;
+
+        if (transcript !== undefined) {
+            if (typeof transcript !== 'string') {
+                return res.status(400).json({ message: 'Transcript must be a string' });
+            }
+
+            session.transcript = transcript;
+        }
+
+        if (soapNotes !== undefined) {
+            if (!soapNotes || typeof soapNotes !== 'object' || Array.isArray(soapNotes)) {
+                return res.status(400).json({ message: 'SOAP notes must be an object' });
+            }
+
+            session.soapNotes = {
+                subjective: String(soapNotes.subjective || ''),
+                objective: String(soapNotes.objective || ''),
+                assessment: String(soapNotes.assessment || ''),
+                plan: String(soapNotes.plan || '')
+            };
+        }
+
+        await session.save();
+
+        res.json({
+            transcript: session.transcript,
+            soapNotes: session.soapNotes
+        });
+    } catch (error) {
+        next(error);
+    }
+});
 
 router.get('/medical-records', auth, audit('VIEW_MEDICAL_RECORDS', 'MedicalRecord'), async (req, res, next) => {  try {
     const query = req.user.userType === 'doctor' 
