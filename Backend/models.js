@@ -92,6 +92,13 @@ const consultationSessionSchema = new mongoose.Schema({
         default: ''
     },
 
+    soapNotes: {
+        subjective: { type: String, default: '' },
+        objective: { type: String, default: '' },
+        assessment: { type: String, default: '' },
+        plan: { type: String, default: '' }
+    },
+
     recordingUrl: {
         type: String,
         default: ''
