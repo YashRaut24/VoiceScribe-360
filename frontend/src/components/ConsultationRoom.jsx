@@ -17,11 +17,12 @@ function ConsultationRoom() {
     const [isRecording, setIsRecording] = useState(false);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
-    const [transcribing, setTranscribing] = useState(false);
     const [soapNotes, setSoapNotes] = useState(null);
     const [generatingSoap, setGeneratingSoap] = useState(false);
     const [savingRecord, setSavingRecord] = useState(false);
     const [recordSaved, setRecordSaved] = useState(false);
+    const [savingTranscript, setSavingTranscript] = useState(false);
+    const [savingSoap, setSavingSoap] = useState(false);
     const { user } = useAuth();
     const navigate = useNavigate();
     useEffect(() => {
@@ -117,6 +118,8 @@ function ConsultationRoom() {
                 const data = await apiService.getConsultationSession(sessionId);
 
                 setSession(data);
+                setTranscript(data.transcript || '');
+                setSoapNotes(data.soapNotes || null);
 
         } catch (error) {
 
@@ -216,8 +219,6 @@ function ConsultationRoom() {
 
                 try {
 
-                    setTranscribing(true);
-
                     const result = await apiService.transcribeAudio(audioBlob);
 
                     setTranscript(result.transcript);
@@ -230,10 +231,6 @@ function ConsultationRoom() {
                     );
 
                     alert(error.message);
-
-                } finally {
-
-                    setTranscribing(false);
 
                 }
 
@@ -271,6 +268,42 @@ function ConsultationRoom() {
     }
 
 };
+const handleSaveTranscript = async () => {
+    if (!transcript.trim()) {
+        alert('No transcript available.');
+        return;
+    }
+
+    try {
+        setSavingTranscript(true);
+        await apiService.saveConsultationContent(session._id, { transcript });
+        alert('Transcript saved successfully.');
+    } catch (error) {
+        console.error('Failed to save transcript:', error);
+        alert(error.message || 'Failed to save transcript');
+    } finally {
+        setSavingTranscript(false);
+    }
+};
+
+const handleSaveSoap = async () => {
+    if (!soapNotes) {
+        alert('Generate or load SOAP notes first.');
+        return;
+    }
+
+    try {
+        setSavingSoap(true);
+        await apiService.saveConsultationContent(session._id, { soapNotes });
+        alert('SOAP notes saved successfully.');
+    } catch (error) {
+        console.error('Failed to save SOAP notes:', error);
+        alert(error.message || 'Failed to save SOAP notes');
+    } finally {
+        setSavingSoap(false);
+    }
+};
+
 const handleSaveMedicalRecord = async () => {
     if (!soapNotes) {
         alert('Generate SOAP notes first.');
@@ -392,6 +425,24 @@ const handleSaveMedicalRecord = async () => {
                 >
                     {transcript || 'Waiting for conversation...'}
                 </div>
+
+                <button
+                    onClick={handleSaveTranscript}
+                    disabled={!transcript.trim() || savingTranscript}
+                    style={{
+                        marginTop: '1rem',
+                        padding: '10px 18px',
+                        border: 'none',
+                        borderRadius: '8px',
+                        background: '#0f766e',
+                        color: 'white',
+                        cursor: transcript.trim() && !savingTranscript
+                            ? 'pointer'
+                            : 'not-allowed'
+                    }}
+                >
+                    {savingTranscript ? 'Saving Transcript...' : 'Save Transcript'}
+                </button>
 
                 <button
                     onClick={handleGenerateSoap}
@@ -516,6 +567,23 @@ const handleSaveMedicalRecord = async () => {
                                 }}
                             />
                         </div>
+
+                        <button
+                            onClick={handleSaveSoap}
+                            disabled={savingSoap}
+                            style={{
+                                marginTop: '2rem',
+                                padding: '12px 24px',
+                                border: 'none',
+                                borderRadius: '8px',
+                                background: '#0f766e',
+                                color: 'white',
+                                cursor: savingSoap ? 'not-allowed' : 'pointer',
+                                fontSize: '16px'
+                            }}
+                        >
+                            {savingSoap ? 'Saving SOAP Notes...' : 'Save SOAP Notes'}
+                        </button>
 
                         <button
                             onClick={handleSaveMedicalRecord}
