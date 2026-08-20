@@ -119,6 +119,13 @@ class ApiService {
         }
     );
   }
+
+  async saveConsultationContent(sessionId, content) {
+    return this.request(`/consultation-session/${sessionId}/content`, {
+      method: 'PATCH',
+      body: JSON.stringify(content)
+    });
+  }
 async transcribeAudio(audioBlob) {
 
     const formData = new FormData();
