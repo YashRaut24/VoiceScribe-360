@@ -13,7 +13,7 @@ const router = express.Router();
 const FormData = require('form-data');
 const fs = require('fs');
 
-router.get('/appointments', auth, audit('VIEW_APPOINTMENTS', 'Appointment'), async (req, res, next) => {
+router.get('/appointments', auth, requireRole('doctor', 'patient'), audit('VIEW_APPOINTMENTS', 'Appointment'), async (req, res, next) => {
   try {
     const query = req.user.userType === 'doctor' 
       ? { doctorId: req.user.userId }
@@ -324,11 +324,15 @@ router.get('/my-online-consultations', auth, requireRole('patient'), async (req,
         }
     }
 );
-router.get('/consultation-session/:appointmentId',auth,async (req, res, next) => {
+router.get('/consultation-session/:appointmentId',auth,requireRole('doctor', 'patient'),async (req, res, next) => {
         try {
 
             const session = await ConsultationSession.findOne({
-                appointmentId: req.params.appointmentId
+                appointmentId: req.params.appointmentId,
+                $or: [
+                    { doctorId: req.user.userId },
+                    { patientId: req.user.userId }
+                ]
             })
             .populate(
                 'doctorId',
@@ -353,7 +357,7 @@ router.get('/consultation-session/:appointmentId',auth,async (req, res, next) =>
     }
 );
 
-router.get('/consultation-session/:id/details', auth, async (req, res, next) => {
+router.get('/consultation-session/:id/details', auth, requireRole('doctor', 'patient'), async (req, res, next) => {
         try {
 
             const session = await ConsultationSession
@@ -390,7 +394,7 @@ router.get('/consultation-session/:id/details', auth, async (req, res, next) => 
     }
 );
 
-router.patch('/consultation-session/:id/content', auth, async (req, res, next) => {
+router.patch('/consultation-session/:id/content', auth, requireRole('doctor'), async (req, res, next) => {
     try {
         const session = await ConsultationSession.findOne({
             _id: req.params.id,
@@ -440,7 +444,7 @@ router.patch('/consultation-session/:id/content', auth, async (req, res, next) =
     }
 });
 
-router.get('/medical-records', auth, audit('VIEW_MEDICAL_RECORDS', 'MedicalRecord'), async (req, res, next) => {  try {
+router.get('/medical-records', auth, requireRole('doctor', 'patient'), audit('VIEW_MEDICAL_RECORDS', 'MedicalRecord'), async (req, res, next) => {  try {
     const query = req.user.userType === 'doctor' 
       ? { doctorId: req.user.userId }
       : { patientId: req.user.userId };
@@ -501,6 +505,24 @@ router.post('/medical-records', auth, requireRole('doctor'), audit('CREATE_MEDIC
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
+
+        if (!appointmentId) {
+            return res.status(400).json({ message: 'Appointment is required for a medical record' });
+        }
+
+        if (appointmentId) {
+            const appointment = await Appointment.findOne({
+                _id: appointmentId,
+                doctorId: req.user.userId,
+                patientId
+            });
+
+            if (!appointment) {
+                return res.status(403).json({
+                    message: 'Appointment is not owned by this doctor and patient'
+                });
+            }
+        }
 
     const record = new MedicalRecord({
         patientId,
