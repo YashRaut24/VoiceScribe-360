@@ -14,6 +14,9 @@ const SocketProvider = ({ children }) => {
             return;
         }
 
+        socket.auth = {
+            token: localStorage.getItem('token')
+        };
         socket.connect();
 
         console.log('Socket Connected');
