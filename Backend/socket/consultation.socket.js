@@ -1,9 +1,30 @@
 const rooms = new Map();
+const { ConsultationSession } = require('../models');
 
 function registerConsultationSocket(io, socket) {
     
 
-    socket.on('join-room', ({ roomId, role }) => {
+    socket.on('join-room', async ({ roomId }) => {
+        try {
+            const session = await ConsultationSession.findOne({
+                roomId,
+                $or: [
+                    { doctorId: socket.user.userId },
+                    { patientId: socket.user.userId }
+                ],
+                status: { $in: ['waiting', 'ongoing'] }
+            });
+
+            if (!session) {
+                socket.emit('authorization-error', {
+                    message: 'You are not authorized to join this consultation'
+                });
+                return;
+            }
+
+            const role = String(session.doctorId) === String(socket.user.userId)
+                ? 'doctor'
+                : 'patient';
 
             socket.join(roomId);
 
@@ -34,13 +55,18 @@ function registerConsultationSocket(io, socket) {
 
             console.log("Broadcasting:", room);
             io.to(roomId).emit('participant-update', room);
+        } catch (error) {
+            socket.emit('authorization-error', {
+                message: 'Unable to authorize this consultation'
+            });
+        }
 
     });
     socket.on(
         'transcript-update',
         ({ roomId, transcript }) => {
 
-            if (!roomId || !transcript) {
+            if (socket.role !== 'doctor' || socket.roomId !== roomId || !transcript) {
                 return;
             }
 
@@ -54,6 +80,10 @@ function registerConsultationSocket(io, socket) {
         }
     );
     socket.on('end-consultation', (roomId) => {
+
+        if (socket.role !== 'doctor' || socket.roomId !== roomId) {
+            return;
+        }
 
         io.to(roomId).emit('consultation-ended');
 
