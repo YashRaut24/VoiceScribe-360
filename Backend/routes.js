@@ -9,6 +9,7 @@ const { createSymptomSchema } = require('./validators/symptom.validator');
 const requireRole = require('./middleware/role.middleware');
 const upload = require('./middleware/upload.middleware');
 const audit = require('./middleware/audit.middleware');
+const { getIO } = require('./socket/socket');
 const router = express.Router();
 const FormData = require('form-data');
 const fs = require('fs');
@@ -207,18 +208,53 @@ router.patch(
                 });
             }
 
-            session.status = 'completed';
-            session.endedAt = new Date();
+            if (session.status !== 'completed') {
+                session.status = 'completed';
+                session.endedAt = new Date();
 
-            if (session.startedAt) {
+                if (session.startedAt) {
 
-                session.duration = Math.floor(
-                    (session.endedAt - session.startedAt) / 1000
-                );
+                    session.duration = Math.floor(
+                        (session.endedAt - session.startedAt) / 1000
+                    );
 
+                }
+
+                await session.save();
             }
 
-            await session.save();
+            if (session.appointmentId) {
+                await Appointment.updateOne(
+                    {
+                        _id: session.appointmentId,
+                        doctorId: req.user.userId
+                    },
+                    {
+                        status: 'completed'
+                    }
+                );
+            }
+
+            try {
+                getIO().to(session.roomId).emit('consultation-ended', {
+                    session: {
+                        _id: String(session._id),
+                        roomId: session.roomId,
+                        status: session.status,
+                        endedAt: session.endedAt,
+                        duration: session.duration,
+                        transcript: session.transcript || '',
+                        soapNotes: session.soapNotes || {
+                            subjective: '',
+                            objective: '',
+                            assessment: '',
+                            plan: ''
+                        }
+                    }
+                });
+            } catch (socketError) {
+                console.error('Failed to broadcast consultation end:', socketError.message);
+            }
 
             res.json(session);
 
