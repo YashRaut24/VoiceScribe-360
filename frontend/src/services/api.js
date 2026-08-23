@@ -1,4 +1,33 @@
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_ORIGIN = import.meta.env.VITE_API_ORIGIN || 'http://localhost:3000';
+const API_BASE_URL = `${API_ORIGIN}/api`;
+
+const parseResponseBody = async (response) => {
+  if (response.status === 204) {
+    return null;
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+
+  try {
+    if (contentType.includes('application/json')) {
+      return await response.json();
+    }
+
+    const text = await response.text();
+    return text ? { message: text } : null;
+  } catch {
+    return null;
+  }
+};
+
+const createRequestError = (response, data, fallbackMessage) => {
+  const err = new Error(data?.message || fallbackMessage || `Request failed with status ${response.status}`);
+  err.status = response.status;
+  err.errors = data?.errors || [];
+  return err;
+};
+
+const getToken = () => localStorage.getItem('token');
 
 class ApiService {
   constructor() {
@@ -30,17 +59,19 @@ class ApiService {
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log("Request:", url);
-    console.log("Token:", this.token);
-    console.log("Headers:", config.headers);
 
-    const response = await fetch(url, config);
-    const data = await response.json();
+    let response;
+
+    try {
+      response = await fetch(url, config);
+    } catch (error) {
+      throw new Error(error.message || 'Network error. Please check your connection and try again.');
+    }
+
+    const data = await parseResponseBody(response);
 
     if (!response.ok) {
-        const err = new Error(data.message || 'Something went wrong');
-        err.errors = data.errors || [];
-        throw err;
+        throw createRequestError(response, data, 'Something went wrong');
     }
 
     return data;
@@ -138,24 +169,24 @@ async transcribeAudio(audioBlob) {
 
     const url = `${API_BASE_URL}/transcribe-audio`;
 
-    const response = await fetch(url, {
+    let response;
+
+    try {
+        response = await fetch(url, {
         method: 'POST',
         headers: {
-            Authorization: `Bearer ${this.token}`
+            Authorization: `Bearer ${getToken()}`
         },
         body: formData
-    });
+        });
+    } catch (error) {
+        throw new Error(error.message || 'Network error while uploading audio.');
+    }
 
-    const data = await response.json();
+    const data = await parseResponseBody(response);
 
     if (!response.ok) {
-        const err = new Error(
-            data.message || 'Transcription failed'
-        );
-
-        err.errors = data.errors || [];
-
-        throw err;
+        throw createRequestError(response, data, 'Transcription failed');
     }
 
     return data;
@@ -224,20 +255,24 @@ async transcribeAudio(audioBlob) {
       formData.append('audio', audioBlob, 'consultation.webm');
 
       const url = `${API_BASE_URL}/upload-audio`;
-      const response = await fetch(url, {
+      let response;
+
+      try {
+          response = await fetch(url, {
           method: 'POST',
           headers: {
-              Authorization: `Bearer ${this.token}`
+              Authorization: `Bearer ${getToken()}`
           },
           body: formData
-      });
+          });
+      } catch (error) {
+          throw new Error(error.message || 'Network error while uploading audio.');
+      }
 
-      const data = await response.json();
+      const data = await parseResponseBody(response);
 
       if (!response.ok) {
-          const err = new Error(data.message || 'Audio upload failed');
-          err.errors = data.errors || [];
-          throw err;
+          throw createRequestError(response, data, 'Audio upload failed');
       }
 
       return data;
