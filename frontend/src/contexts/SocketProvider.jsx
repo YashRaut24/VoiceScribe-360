@@ -14,14 +14,22 @@ const SocketProvider = ({ children }) => {
             return;
         }
 
-        socket.auth = {
-            token: localStorage.getItem('token')
+        const refreshSocketAuth = () => {
+            socket.auth = {
+                token: localStorage.getItem('token')
+            };
         };
-        socket.connect();
 
-        console.log('Socket Connected');
+        refreshSocketAuth();
+
+        if (!socket.connected) {
+            socket.connect();
+        }
+
+        socket.io.on('reconnect_attempt', refreshSocketAuth);
 
         return () => {
+            socket.io.off('reconnect_attempt', refreshSocketAuth);
             socket.disconnect();
         };
 
