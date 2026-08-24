@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Mail, Lock, ArrowLeft, Eye, EyeOff, Stethoscope, User } from 'lucide-react';
+import { Mail, Lock, ArrowLeft, Eye, EyeOff, Stethoscope, User } from 'lucide-react';
 import { useAuth } from '../contexts/useAuth';
 import './Login.css';
 
@@ -78,22 +78,22 @@ const Login = () => {
       <div className="login-branding">
         <div>
           <div className="branding-logo">
-            <Mic />
-            <span>VoiceScribe</span>
+            <Stethoscope />
+            <span>MedScribe 360</span>
           </div>
           
           <h1 className="branding-title">
-            Welcome Back to<br />VoiceScribe
+            Welcome back to<br />MedScribe 360
           </h1>
           
           <p className="branding-description">
-            Continue transforming healthcare documentation with AI-powered voice technology.
+            Continue your clinical documentation, consultation, and patient care workflow.
           </p>
 
           <ul className="branding-features">
             <li>
               <div className="dot"></div>
-              <span>5 minutes → 30 seconds documentation time</span>
+              <span>Structured documentation review</span>
             </li>
             <li>
               <div className="dot"></div>
@@ -111,7 +111,7 @@ const Login = () => {
         </div>
 
         <div className="branding-footer">
-          <p>© 2026 VoiceScribe. GDG AI Hackathon 2.0</p>
+          <p>MedScribe 360 clinical workspace</p>
         </div>
       </div>
 
@@ -119,8 +119,8 @@ const Login = () => {
       <div className="login-form-container">
         <div className="login-form-wrapper">
           <div className="mobile-logo">
-            <Mic />
-            <span>VoiceScribe</span>
+            <Stethoscope />
+            <span>MedScribe 360</span>
           </div>
 
           <a href="/" className="back-link">
@@ -129,7 +129,7 @@ const Login = () => {
           </a>
 
           <h2 className="form-title">Sign In</h2>
-          <p className="form-subtitle">Access your VoiceScribe account</p>
+          <p className="form-subtitle">Access your MedScribe 360 account</p>
 
       
           <div className="user-type-toggle">
@@ -179,7 +179,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="••••••••"
+                  placeholder="Password"
                 />
                 <button
                   type="button"
