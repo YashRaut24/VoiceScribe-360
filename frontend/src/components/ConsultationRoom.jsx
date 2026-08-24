@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     Activity,
@@ -656,7 +656,7 @@ function ConsultationRoom() {
                                 <div>
                                     <span className="panel-kicker">
                                         <ClipboardList size={16} />
-                                        SOAP
+                                        AI-assisted draft
                                     </span>
                                     <h2>Clinical Note</h2>
                                 </div>
