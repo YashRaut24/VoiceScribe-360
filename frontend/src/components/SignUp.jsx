@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Mail, Lock, User, Stethoscope, Building2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, Stethoscope, Building2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/useAuth';
 import './SignUp.css';
 
@@ -107,12 +107,12 @@ const SignUp = () => {
       <div className="signup-branding">
         <div>
           <div className="branding-logo">
-            <Mic />
-            <span>VoiceScribe</span>
+            <Stethoscope />
+            <span>MedScribe 360</span>
           </div>
           
           <h1 className="branding-title">
-            Join the Future of<br />Medical Documentation
+            Join the clinical<br />documentation workspace
           </h1>
           
           <p className="branding-description">
@@ -122,7 +122,7 @@ const SignUp = () => {
           <div className="branding-features">
             <div className="branding-feature">
               <div className="branding-feature-icon">
-                <Mic />
+                <Stethoscope />
               </div>
               <div className="branding-feature-content">
                 <h3>Voice-Powered Documentation</h3>
@@ -153,7 +153,7 @@ const SignUp = () => {
         </div>
 
         <div className="branding-footer">
-          <p>© 2026 VoiceScribe. GDG AI Hackathon 2.0</p>
+          <p>MedScribe 360 clinical workspace</p>
         </div>
       </div>
 
@@ -161,8 +161,8 @@ const SignUp = () => {
       <div className="signup-form-container">
         <div className="signup-form-wrapper">
           <div className="signup-mobile-logo">
-            <Mic />
-            <span>VoiceScribe</span>
+            <Stethoscope />
+            <span>MedScribe 360</span>
           </div>
 
           <a href="/" className="signup-back-link">
@@ -171,7 +171,7 @@ const SignUp = () => {
           </a>
 
           <h2 className="signup-title">Create Account</h2>
-          <p className="signup-subtitle">Start your journey with VoiceScribe</p>
+          <p className="signup-subtitle">Start your journey with MedScribe 360</p>
 
           {}
           <div className="signup-user-toggle">
@@ -335,7 +335,7 @@ const SignUp = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className="signup-input with-icon with-toggle"
-                  placeholder="••••••••"
+                  placeholder="Password"
                   required
                   minLength="8"
                 />
@@ -363,7 +363,7 @@ const SignUp = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   className="signup-input with-icon"
-                  placeholder="••••••••"
+                  placeholder="Password"
                   required
                 />
               </div>
