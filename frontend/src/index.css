@@ -1,15 +1,53 @@
 /* Global CSS Reset and Base Styles */
+:root {
+  color-scheme: light;
+  --ms-bg: #f7f4ee;
+  --ms-bg-soft: #fbfaf6;
+  --ms-surface: #ffffff;
+  --ms-surface-muted: #f3f0e9;
+  --ms-paper: #fffdf8;
+  --ms-border: #ded8cc;
+  --ms-border-strong: #c8d3d5;
+  --ms-text: #202a2f;
+  --ms-text-muted: #637075;
+  --ms-heading: #172126;
+  --ms-blue: #2f6f8f;
+  --ms-blue-dark: #235a75;
+  --ms-blue-soft: #e6f0f4;
+  --ms-teal: #197b78;
+  --ms-teal-soft: #e3f1ef;
+  --ms-green: #3d8062;
+  --ms-green-soft: #e8f3ec;
+  --ms-amber: #a66d1f;
+  --ms-amber-soft: #f7ead2;
+  --ms-red: #b6423c;
+  --ms-red-soft: #fae6e3;
+  --ms-shadow: 0 18px 46px rgba(41, 51, 55, 0.08);
+  --ms-shadow-soft: 0 10px 28px rgba(41, 51, 55, 0.06);
+  --ms-radius: 8px;
+  --ms-radius-sm: 6px;
+  --ms-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html {
+  background: var(--ms-bg);
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: var(--ms-font);
   line-height: 1.6;
-  color: #1F2937;
-  background-color: #F8FAFC;
+  color: var(--ms-text);
+  background:
+    linear-gradient(90deg, rgba(47, 111, 143, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(47, 111, 143, 0.035) 1px, transparent 1px),
+    var(--ms-bg);
+  background-size: 44px 44px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -19,13 +57,34 @@ a {
   text-decoration: none;
 }
 
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
 button {
-  font-family: inherit;
   cursor: pointer;
 }
 
-input, select, textarea {
-  font-family: inherit;
+button:disabled {
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  color: var(--ms-text);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid rgba(47, 111, 143, 0.24);
+  outline-offset: 2px;
 }
 
 #root {
