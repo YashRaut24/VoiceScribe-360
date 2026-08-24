@@ -1,198 +1,204 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Calendar, CheckCircle2, Clock, FileText, Loader2, Stethoscope, Video } from 'lucide-react';
 import apiService from '../services/api';
+import './AppointmentBooking.css';
 
 const AppointmentBooking = () => {
-    const navigate = useNavigate();
-    const [doctors, setDoctors] = useState([]);
-    const [loadingDoctors, setLoadingDoctors] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [errors, setErrors] = useState([]);
-    const [success, setSuccess] = useState(false);
+  const navigate = useNavigate();
+  const [doctors, setDoctors] = useState([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState([]);
+  const [success, setSuccess] = useState(false);
+  const [form, setForm] = useState({
+    doctorId: '',
+    date: '',
+    time: '',
+    type: 'clinic',
+    duration: 30,
+    notes: ''
+  });
 
-    const [form, setForm] = useState({
-        doctorId: '',
-        date: '',
-        time: '',
-        type: 'clinic',
-        duration: 30,
-        notes: ''
-    });;
-
-    useEffect(() => {
-        const fetchDoctors = async () => {
-            try {
-                const data = await apiService.getDoctors();
-
-                console.log("Doctors returned:", data);
-
-                setDoctors(data);
-            } catch (error) {
-                console.error("Doctor fetch failed");
-                console.error(error);
-                alert(error.message);
-            }finally {
-                setLoadingDoctors(false);
-            }
-        };
-        fetchDoctors();
-    }, []);
-
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const data = await apiService.getDoctors();
+        setDoctors(data);
+      } catch (error) {
+        console.error('Doctor fetch failed', error);
+        alert(error.message);
+      } finally {
+        setLoadingDoctors(false);
+      }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setErrors([]);
-        setSubmitting(true);
+    fetchDoctors();
+  }, []);
 
-        try {
-            const dateTime = new Date(`${form.date}T${form.time}`).toISOString();
+  const handleChange = (event) => {
+    setForm({ ...form, [event.target.name]: event.target.value });
+  };
 
-            await apiService.createAppointment({
-                doctorId: form.doctorId,
-                date: dateTime,
-                type: form.type,
-                duration: Number(form.duration),
-                notes: form.notes
-            });
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setErrors([]);
+    setSubmitting(true);
 
-            setSuccess(true);
-            setTimeout(() => navigate('/patient-dashboard'), 2000);
-        } catch (error) {
-                if (error.errors && error.errors.length > 0) {
-                    setErrors(error.errors);
-                } else {
-                    setErrors([error.message]);
-                }
-            }finally {
-            setSubmitting(false);
-        }
-    };
+    try {
+      const dateTime = new Date(`${form.date}T${form.time}`).toISOString();
 
-    if (success) {
-        return (
-            <div style={{ padding: '40px', textAlign: 'center' }}>
-                <h2>Appointment Booked Successfully</h2>
-                <p>Redirecting you back to dashboard...</p>
-            </div>
-        );
+      await apiService.createAppointment({
+        doctorId: form.doctorId,
+        date: dateTime,
+        type: form.type,
+        duration: Number(form.duration),
+        notes: form.notes
+      });
+
+      setSuccess(true);
+      setTimeout(() => navigate('/patient-dashboard'), 2000);
+    } catch (error) {
+      if (error.errors && error.errors.length > 0) {
+        setErrors(error.errors);
+      } else {
+        setErrors([error.message]);
+      }
+    } finally {
+      setSubmitting(false);
     }
+  };
 
+  if (success) {
     return (
-        <div style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
-            <button onClick={() => navigate('/patient-dashboard')} style={{ marginBottom: '20px', cursor: 'pointer' }}>
-                ← Back to Dashboard
-            </button>
-
-            <h1>Book an Appointment</h1>
-
-            {errors.length > 0 && (
-                <div style={{ background: '#fee', border: '1px solid #fcc', padding: '12px', borderRadius: '6px', marginBottom: '20px' }}>
-                    {errors.map((err, i) => <p key={i} style={{ margin: '4px 0', color: '#c00' }}>{err}</p>)}
-                </div>
-            )}
-
-            {loadingDoctors ? <p>Loading doctors...</p> : (
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div>
-                        <label>Select Doctor</label>
-                        <select name="doctorId" value={form.doctorId} onChange={handleChange} required
-                            style={{ display: 'block', width: '100%', padding: '8px', marginTop: '4px' }}>
-                            <option value="">-- Choose a doctor --</option>
-                            {doctors.map(doc => (
-                                <option key={doc._id} value={doc._id}>
-                                    Dr. {doc.firstName} {doc.lastName} — {doc.specialization}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                    <label>Consultation Type</label>
-
-                    <div
-                        style={{
-                            display: 'flex',
-                            gap: '16px',
-                            marginTop: '8px'
-                        }}
-                    >
-                        <label
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}
-                        >
-                            <input
-                                type="radio"
-                                name="type"
-                                value="clinic"
-                                checked={form.type === 'clinic'}
-                                onChange={handleChange}
-                            />
-                            Clinic Visit
-                        </label>
-
-                        <label
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}
-                        >
-                            <input
-                                type="radio"
-                                name="type"
-                                value="online"
-                                checked={form.type === 'online'}
-                                onChange={handleChange}
-                            />
-                            Online Consultation
-                        </label>
-                    </div>
-                </div>
-
-                    <div>
-                        <label>Date</label>
-                        <input type="date" name="date" value={form.date} onChange={handleChange} required
-                            style={{ display: 'block', width: '100%', padding: '8px', marginTop: '4px' }} />
-                    </div>
-
-                    <div>
-                        <label>Time</label>
-                        <input type="time" name="time" value={form.time} onChange={handleChange} required
-                            style={{ display: 'block', width: '100%', padding: '8px', marginTop: '4px' }} />
-                    </div>
-
-                    <div>
-                        <label>Duration (minutes)</label>
-                        <select name="duration" value={form.duration} onChange={handleChange}
-                            style={{ display: 'block', width: '100%', padding: '8px', marginTop: '4px' }}>
-                            <option value={15}>15 minutes</option>
-                            <option value={30}>30 minutes</option>
-                            <option value={45}>45 minutes</option>
-                            <option value={60}>60 minutes</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label>Notes (optional)</label>
-                        <textarea name="notes" value={form.notes} onChange={handleChange}
-                            placeholder="Describe your reason for visit..."
-                            style={{ display: 'block', width: '100%', padding: '8px', marginTop: '4px', minHeight: '80px' }} />
-                    </div>
-
-                    <button type="submit" disabled={submitting}
-                        style={{ padding: '12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' }}>
-                        {submitting ? 'Booking...' : 'Book Appointment'}
-                    </button>
-                </form>
-            )}
-        </div>
+      <main className="appointment-booking booking-success">
+        <section className="booking-success-panel">
+          <CheckCircle2 size={38} />
+          <h1>Appointment booked</h1>
+          <p>Redirecting you back to your health journey.</p>
+        </section>
+      </main>
     );
+  }
+
+  return (
+    <main className="appointment-booking">
+      <section className="booking-shell">
+        <button className="booking-back" type="button" onClick={() => navigate('/patient-dashboard')}>
+          <ArrowLeft size={18} />
+          Back to dashboard
+        </button>
+
+        <header className="booking-header">
+          <span>Clinical schedule</span>
+          <h1>Book an appointment</h1>
+          <p>Choose the doctor, visit type, and timing that best matches your care needs.</p>
+        </header>
+
+        {errors.length > 0 && (
+          <div className="booking-errors" role="alert">
+            {errors.map((err) => <p key={err}>{err}</p>)}
+          </div>
+        )}
+
+        {loadingDoctors ? (
+          <div className="booking-loading">
+            <Loader2 className="spin" size={26} />
+            <p>Loading care providers...</p>
+          </div>
+        ) : (
+          <form className="booking-form" onSubmit={handleSubmit}>
+            <label className="booking-field">
+              <span>Select doctor</span>
+              <div className="field-control with-icon">
+                <Stethoscope size={18} />
+                <select name="doctorId" value={form.doctorId} onChange={handleChange} required>
+                  <option value="">Choose a doctor</option>
+                  {doctors.map((doctor) => (
+                    <option key={doctor._id} value={doctor._id}>
+                      Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </label>
+
+            <div className="booking-type-group" role="radiogroup" aria-label="Consultation type">
+              <label className={`booking-type ${form.type === 'clinic' ? 'active' : ''}`}>
+                <input
+                  type="radio"
+                  name="type"
+                  value="clinic"
+                  checked={form.type === 'clinic'}
+                  onChange={handleChange}
+                />
+                <Stethoscope size={20} />
+                <span>Clinic visit</span>
+              </label>
+
+              <label className={`booking-type ${form.type === 'online' ? 'active' : ''}`}>
+                <input
+                  type="radio"
+                  name="type"
+                  value="online"
+                  checked={form.type === 'online'}
+                  onChange={handleChange}
+                />
+                <Video size={20} />
+                <span>Online consultation</span>
+              </label>
+            </div>
+
+            <div className="booking-grid">
+              <label className="booking-field">
+                <span>Date</span>
+                <div className="field-control with-icon">
+                  <Calendar size={18} />
+                  <input type="date" name="date" value={form.date} onChange={handleChange} required />
+                </div>
+              </label>
+
+              <label className="booking-field">
+                <span>Time</span>
+                <div className="field-control with-icon">
+                  <Clock size={18} />
+                  <input type="time" name="time" value={form.time} onChange={handleChange} required />
+                </div>
+              </label>
+            </div>
+
+            <label className="booking-field">
+              <span>Duration</span>
+              <select name="duration" value={form.duration} onChange={handleChange}>
+                <option value={15}>15 minutes</option>
+                <option value={30}>30 minutes</option>
+                <option value={45}>45 minutes</option>
+                <option value={60}>60 minutes</option>
+              </select>
+            </label>
+
+            <label className="booking-field">
+              <span>Visit notes</span>
+              <div className="field-control textarea-control">
+                <FileText size={18} />
+                <textarea
+                  name="notes"
+                  value={form.notes}
+                  onChange={handleChange}
+                  placeholder="Describe your reason for visit"
+                />
+              </div>
+            </label>
+
+            <button className="booking-submit" type="submit" disabled={submitting}>
+              {submitting ? <Loader2 className="spin" size={18} /> : <Calendar size={18} />}
+              {submitting ? 'Booking...' : 'Book appointment'}
+            </button>
+          </form>
+        )}
+      </section>
+    </main>
+  );
 };
 
 export default AppointmentBooking;
