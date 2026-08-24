@@ -1,5 +1,16 @@
-import React, { useState } from 'react';
-import { Menu, X, Mic, FileText, Activity, Shield, CheckCircle, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import {
+  Activity,
+  ArrowRight,
+  CheckCircle,
+  ClipboardList,
+  FileText,
+  Menu,
+  Mic,
+  Shield,
+  Stethoscope,
+  X
+} from 'lucide-react';
 import './LandingPage.css';
 
 const LandingPage = () => {
@@ -11,19 +22,24 @@ const LandingPage = () => {
         <div className="navbar-container">
           <div className="navbar-content">
             <div className="navbar-logo">
-              <Mic />
-              <span>VoiceScribe</span>
+              <Stethoscope />
+              <span>MedScribe 360</span>
             </div>
-            
+
             <div className="navbar-menu">
               <a href="#features">Features</a>
-              <a href="#how-it-works">How It Works</a>
-              <a href="#benefits">Benefits</a>
+              <a href="#how-it-works">Workflow</a>
+              <a href="#benefits">Trust</a>
               <a href="/login">Login</a>
               <a href="/signup" className="navbar-cta">Get Started</a>
             </div>
 
-            <button className="navbar-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            <button
+              className="navbar-toggle"
+              type="button"
+              aria-label="Toggle menu"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
               {isMenuOpen ? <X /> : <Menu />}
             </button>
           </div>
@@ -32,8 +48,8 @@ const LandingPage = () => {
         {isMenuOpen && (
           <div className="mobile-menu">
             <a href="#features">Features</a>
-            <a href="#how-it-works">How It Works</a>
-            <a href="#benefits">Benefits</a>
+            <a href="#how-it-works">Workflow</a>
+            <a href="#benefits">Trust</a>
             <a href="/login">Login</a>
             <a href="/signup" className="navbar-cta">Get Started</a>
           </div>
@@ -42,21 +58,50 @@ const LandingPage = () => {
 
       <section className="hero-section">
         <div className="hero-container">
-          <h1 className="hero-title">
-            Medical Documentation,<br />
-            <span>Simplified with AI</span>
-          </h1>
-          <p className="hero-description">
-            Capture medical conversations, generate clinical records instantly, and unlock early health intelligence—all while keeping doctors focused on patients.
-          </p>
-          <div className="hero-buttons">
-            <a href="/signup" className="btn-primary">
-              Start Free Trial
-              <ArrowRight style={{ marginLeft: '0.5rem' }} />
-            </a>
-            <a href="#how-it-works" className="btn-secondary">
-              See How It Works
-            </a>
+          <div className="hero-copy">
+            <span className="landing-eyebrow">Clinical Intelligence Platform</span>
+            <h1 className="hero-title">
+              MedScribe 360
+            </h1>
+            <p className="hero-description">
+              Manage consultations, transcription, SOAP documentation, appointments, and patient health timelines in one calm clinical workspace.
+            </p>
+            <div className="hero-buttons">
+              <a href="/signup" className="btn-primary">
+                Start clinical workspace
+                <ArrowRight size={18} />
+              </a>
+              <a href="#how-it-works" className="btn-secondary">
+                See workflow
+              </a>
+            </div>
+          </div>
+
+          <div className="hero-clinical-visual" aria-hidden="true">
+            <div className="visual-header">
+              <span>Today&apos;s Care</span>
+              <strong>5 consultations</strong>
+            </div>
+            <div className="visual-row active">
+              <span>09:30</span>
+              <div>
+                <strong>Current consultation</strong>
+                <p>Transcript active - SOAP draft pending</p>
+              </div>
+            </div>
+            <div className="visual-row">
+              <span>10:15</span>
+              <div>
+                <strong>Follow-up visit</strong>
+                <p>Patient symptoms updated</p>
+              </div>
+            </div>
+            <div className="visual-soap">
+              <span>AI-assisted draft</span>
+              <div />
+              <div />
+              <div />
+            </div>
           </div>
         </div>
       </section>
@@ -64,8 +109,9 @@ const LandingPage = () => {
       <section id="features" className="features-section">
         <div className="section-container">
           <div className="section-header">
-            <h2 className="section-title">Three Stages, One Solution</h2>
-            <p className="section-subtitle">Complete healthcare documentation workflow</p>
+            <span className="landing-eyebrow">Care lifecycle</span>
+            <h2 className="section-title">Three stages, one clinical system</h2>
+            <p className="section-subtitle">Patient preparation, live consultation, and post-visit documentation stay connected.</p>
           </div>
 
           <div className="features-grid">
@@ -73,24 +119,15 @@ const LandingPage = () => {
               <div className="feature-icon">
                 <FileText />
               </div>
-              <h3 className="feature-title">Before Visit</h3>
-              <h4 className="feature-subtitle">SymptomTimeline</h4>
+              <h3 className="feature-title">Before visit</h3>
+              <h4 className="feature-subtitle">Symptom timeline</h4>
               <p className="feature-description">
-                Patients log symptoms casually via voice or text. Build accurate timelines with no memory gaps.
+                Patients log symptoms by voice or text and create a clear chronology before the appointment.
               </p>
               <ul className="feature-list">
-                <li>
-                  <CheckCircle />
-                  <span>Track symptom progression</span>
-                </li>
-                <li>
-                  <CheckCircle />
-                  <span>Automated timeline generation</span>
-                </li>
-                <li>
-                  <CheckCircle />
-                  <span>Clear patient history</span>
-                </li>
+                <li><CheckCircle /><span>Track symptom progression</span></li>
+                <li><CheckCircle /><span>Prepare visit context</span></li>
+                <li><CheckCircle /><span>Reduce memory gaps</span></li>
               </ul>
             </div>
 
@@ -98,24 +135,15 @@ const LandingPage = () => {
               <div className="feature-icon">
                 <Mic />
               </div>
-              <h3 className="feature-title">During Visit</h3>
-              <h4 className="feature-subtitle">VoiceScribe AI</h4>
+              <h3 className="feature-title">During visit</h3>
+              <h4 className="feature-subtitle">AI-assisted documentation</h4>
               <p className="feature-description">
-                Record natural conversations. Generate SOAP notes, prescriptions, and instructions in seconds.
+                Record natural conversations, review transcripts, and generate doctor-approved SOAP drafts.
               </p>
               <ul className="feature-list">
-                <li>
-                  <CheckCircle />
-                  <span>5 min → 30 sec documentation</span>
-                </li>
-                <li>
-                  <CheckCircle />
-                  <span>Automatic SOAP notes</span>
-                </li>
-                <li>
-                  <CheckCircle />
-                  <span>More doctor-patient focus</span>
-                </li>
+                <li><CheckCircle /><span>Audio recording</span></li>
+                <li><CheckCircle /><span>Live transcript workflow</span></li>
+                <li><CheckCircle /><span>Reviewable SOAP notes</span></li>
               </ul>
             </div>
 
@@ -123,24 +151,15 @@ const LandingPage = () => {
               <div className="feature-icon">
                 <Activity />
               </div>
-              <h3 className="feature-title">After Visit</h3>
-              <h4 className="feature-subtitle">Health Intelligence</h4>
+              <h3 className="feature-title">After visit</h3>
+              <h4 className="feature-subtitle">Patient care record</h4>
               <p className="feature-description">
-                Transform data into insights. Detect patterns, predict trends, enable early intervention.
+                Keep consultations, appointments, symptoms, and clinical notes organized chronologically.
               </p>
               <ul className="feature-list">
-                <li>
-                  <CheckCircle />
-                  <span>Pattern detection</span>
-                </li>
-                <li>
-                  <CheckCircle />
-                  <span>Early warning signals</span>
-                </li>
-                <li>
-                  <CheckCircle />
-                  <span>Anonymized insights</span>
-                </li>
+                <li><CheckCircle /><span>Medical history timeline</span></li>
+                <li><CheckCircle /><span>Clinical activity feed</span></li>
+                <li><CheckCircle /><span>Documentation persistence</span></li>
               </ul>
             </div>
           </div>
@@ -150,17 +169,18 @@ const LandingPage = () => {
       <section id="how-it-works" className="how-it-works-section">
         <div className="section-container">
           <div className="section-header">
-            <h2 className="section-title">How It Works</h2>
-            <p className="section-subtitle">Simple, natural, effective</p>
+            <span className="landing-eyebrow">Workflow</span>
+            <h2 className="section-title">Built around the consultation</h2>
+            <p className="section-subtitle">The interface mirrors clinical work instead of generic admin tasks.</p>
           </div>
 
-          <div>
+          <div className="workflow-list">
             <div className="workflow-step">
+              <div className="step-number">1</div>
               <div className="workflow-content">
-                <div className="step-number">1</div>
-                <h3 className="workflow-title">Start Consultation</h3>
+                <h3 className="workflow-title">Start consultation</h3>
                 <p className="workflow-description">
-                  Doctor opens the app and clicks "Start Consultation". VoiceScribe listens silently in the background while you focus on your patient.
+                  Doctor joins the consultation room, confirms patient identity, and starts recording when ready.
                 </p>
               </div>
               <div className="workflow-image">
@@ -169,28 +189,28 @@ const LandingPage = () => {
             </div>
 
             <div className="workflow-step">
+              <div className="step-number">2</div>
               <div className="workflow-content">
-                <div className="step-number">2</div>
-                <h3 className="workflow-title">Natural Conversation</h3>
+                <h3 className="workflow-title">Capture conversation</h3>
                 <p className="workflow-description">
-                  Speak naturally with your patient. Ask questions, discuss symptoms, explain treatment. VoiceScribe understands medical context automatically.
+                  The transcript becomes structured clinical context while the patient and doctor continue naturally.
                 </p>
               </div>
               <div className="workflow-image">
-                <FileText />
+                <ClipboardList />
               </div>
             </div>
 
             <div className="workflow-step">
+              <div className="step-number">3</div>
               <div className="workflow-content">
-                <div className="step-number">3</div>
-                <h3 className="workflow-title">Instant Documentation</h3>
+                <h3 className="workflow-title">Approve documentation</h3>
                 <p className="workflow-description">
-                  Click "Stop" and within seconds receive complete SOAP notes, structured prescriptions, patient instructions, and follow-up plans. Review, edit, approve.
+                  SOAP notes are generated as a draft, reviewed by the doctor, then saved to the patient record.
                 </p>
               </div>
               <div className="workflow-image">
-                <Activity />
+                <FileText />
               </div>
             </div>
           </div>
@@ -200,8 +220,9 @@ const LandingPage = () => {
       <section id="benefits" className="benefits-section">
         <div className="section-container">
           <div className="section-header">
-            <h2 className="section-title">Why VoiceScribe?</h2>
-            <p className="section-subtitle">Built for modern healthcare</p>
+            <span className="landing-eyebrow">Trust</span>
+            <h2 className="section-title">Why MedScribe 360?</h2>
+            <p className="section-subtitle">Designed for calm, auditable healthcare work.</p>
           </div>
 
           <div className="benefits-grid">
@@ -209,40 +230,32 @@ const LandingPage = () => {
               <div className="benefit-icon">
                 <Shield />
               </div>
-              <h3 className="benefit-title">Privacy First</h3>
-              <p className="benefit-description">
-                Anonymized data, doctor approval required, HIPAA-compliant architecture
-              </p>
+              <h3 className="benefit-title">Privacy first</h3>
+              <p className="benefit-description">Clinical records stay access-controlled and reviewable.</p>
             </div>
 
             <div className="benefit-card">
               <div className="benefit-icon">
                 <CheckCircle />
               </div>
-              <h3 className="benefit-title">No Behavior Change</h3>
-              <p className="benefit-description">
-                Works with natural conversation. No templates, no forced workflows
-              </p>
+              <h3 className="benefit-title">Doctor approval</h3>
+              <p className="benefit-description">AI output is positioned as documentation assistance, not autonomous diagnosis.</p>
             </div>
 
             <div className="benefit-card">
               <div className="benefit-icon">
                 <Activity />
               </div>
-              <h3 className="benefit-title">Real Intelligence</h3>
-              <p className="benefit-description">
-                Detects patterns before labs can, enables preventive action
-              </p>
+              <h3 className="benefit-title">Care continuity</h3>
+              <p className="benefit-description">Symptoms, appointments, and records stay connected across the care journey.</p>
             </div>
 
             <div className="benefit-card">
               <div className="benefit-icon">
                 <Mic />
               </div>
-              <h3 className="benefit-title">Doctor Focused</h3>
-              <p className="benefit-description">
-                Reduces burnout, increases patient interaction, better care quality
-              </p>
+              <h3 className="benefit-title">Less paperwork</h3>
+              <p className="benefit-description">Doctors can focus more attention on the patient conversation.</p>
             </div>
           </div>
         </div>
@@ -250,15 +263,13 @@ const LandingPage = () => {
 
       <section className="cta-section">
         <div className="cta-container">
-          <h2 className="cta-title">
-            Ready to Transform Your Practice?
-          </h2>
+          <h2 className="cta-title">Ready to enter the clinical workspace?</h2>
           <p className="cta-description">
-            Join doctors who've reduced documentation time by 90% while improving patient care.
+            Start with the doctor or patient dashboard and follow the care lifecycle end to end.
           </p>
           <a href="/signup" className="btn-primary">
-            Get Started Free
-            <ArrowRight style={{ marginLeft: '0.5rem' }} />
+            Get started
+            <ArrowRight size={18} />
           </a>
         </div>
       </section>
@@ -268,40 +279,40 @@ const LandingPage = () => {
           <div className="footer-grid">
             <div>
               <div className="footer-brand">
-                <Mic />
-                <span>VoiceScribe</span>
+                <Stethoscope />
+                <span>MedScribe 360</span>
               </div>
               <p className="footer-description">
-                AI-powered medical documentation and health intelligence.
+                Clinical documentation and patient care workflow software.
               </p>
             </div>
             <div className="footer-section">
               <h4>Product</h4>
               <ul>
                 <li><a href="#features">Features</a></li>
-                <li><a href="#how-it-works">How It Works</a></li>
-                <li><a href="#">Pricing</a></li>
+                <li><a href="#how-it-works">Workflow</a></li>
+                <li><a href="#benefits">Trust</a></li>
               </ul>
             </div>
             <div className="footer-section">
-              <h4>Company</h4>
+              <h4>Care</h4>
               <ul>
-                <li><a href="#">About</a></li>
-                <li><a href="#">Contact</a></li>
-                <li><a href="#">Privacy</a></li>
+                <li><a href="/login">Doctor login</a></li>
+                <li><a href="/login">Patient login</a></li>
+                <li><a href="/signup">Create account</a></li>
               </ul>
             </div>
             <div className="footer-section">
-              <h4>Support</h4>
+              <h4>Platform</h4>
               <ul>
-                <li><a href="#">Documentation</a></li>
-                <li><a href="#">Help Center</a></li>
-                <li><a href="#">Status</a></li>
+                <li><a href="#features">Transcription</a></li>
+                <li><a href="#features">SOAP notes</a></li>
+                <li><a href="#features">Health timeline</a></li>
               </ul>
             </div>
           </div>
           <div className="footer-bottom">
-            <p>&copy; 2026 VoiceScribe. Built for GDG AI Hackathon 2.0.</p>
+            <p>&copy; 2026 MedScribe 360.</p>
           </div>
         </div>
       </footer>
