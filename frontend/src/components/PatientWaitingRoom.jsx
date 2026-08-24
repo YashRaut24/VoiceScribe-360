@@ -1,213 +1,137 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, CheckCircle2, Clock, Loader2, Stethoscope, Video } from 'lucide-react';
 import apiService from '../services/api';
 import { useSocket } from '../contexts/SocketContext';
-import { useNavigate } from 'react-router-dom';
+import './PatientWaitingRoom.css';
 
 const PatientWaitingRoom = () => {
+  const { appointmentId } = useParams();
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [doctorConnected, setDoctorConnected] = useState(false);
+  const socket = useSocket();
+  const navigate = useNavigate();
 
-    const { appointmentId } = useParams();
+  useEffect(() => {
+    if (!socket) {
+      return undefined;
+    }
 
-    const [session, setSession] = useState(null);
+    const handleConnect = () => {
+      console.log('Patient connected:', socket.id);
+    };
 
-    const [loading, setLoading] = useState(true);
-    const [doctorConnected, setDoctorConnected] = useState(false);
-    const socket = useSocket();
-    const navigate = useNavigate();
-    useEffect(() => {
+    const handleParticipantUpdate = ({ doctorConnected: isDoctorConnected }) => {
+      setDoctorConnected(Boolean(isDoctorConnected));
+    };
 
-        socket.on('connect', () => {
-            console.log('Patient Connected:', socket.id);
-        });
+    socket.on('connect', handleConnect);
+    socket.on('participant-update', handleParticipantUpdate);
 
+    const loadSession = async () => {
+      try {
+        const data = await apiService.getConsultationSessionByAppointment(appointmentId);
+        setSession(data);
 
-       socket.on('participant-update', ({ doctorConnected, patientConnected }) => {
+        const joinRoom = () => {
+          socket.emit('join-room', {
+            roomId: data.roomId,
+            role: 'patient'
+          });
+        };
 
-            console.log('Waiting room update:', {
-                doctorConnected,
-                patientConnected
-            });
-
-            setDoctorConnected(doctorConnected);
-
-        });
-
-        const loadSession = async () => {
-
-            try {
-
-                const data = await apiService.getConsultationSessionByAppointment(appointmentId)
-
-                setSession(data);
-
-               if (socket.connected) {
-                    socket.emit('join-room', {
-                        roomId: data.roomId,
-                        role: 'patient'
-                    });
-                } else {
-                    socket.once('connect', () => {
-                        socket.emit('join-room', {
-                            roomId: data.roomId,
-                            role: 'patient'
-                        });
-                    });
-                }
-
-                console.log('Joined room:', data.roomId);
-
-            } catch (error) {
-
-                console.error(error);
-
-            } finally {
-
-                setLoading(false);
-
+        if (socket.connected) {
+          joinRoom();
+        } else {
+          socket.once('connect', joinRoom);
         }
-
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadSession();
 
     return () => {
-
-        socket.off('connect');
-        socket.off('participant-update');
-
+      socket.off('connect', handleConnect);
+      socket.off('participant-update', handleParticipantUpdate);
     };
+  }, [appointmentId, socket]);
 
-}, [appointmentId]);
-    if (loading) {
-        return <h2>Loading...</h2>;
-    }
-
-    if (!session) {
+  if (loading) {
     return (
-        <h2 style={{ textAlign: 'center', marginTop: '2rem' }}>
-            Consultation session not found.
-        </h2>
+      <main className="waiting-room waiting-centered">
+        <Loader2 className="spin" size={32} />
+        <p>Loading consultation room...</p>
+      </main>
     );
-}
+  }
 
+  if (!session) {
     return (
-        <div
-            style={{
-                minHeight: '100vh',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                background: '#f8fafc'
-            }}
-        >
-            <div
-                style={{
-                    background: 'white',
-                    padding: '2rem',
-                    borderRadius: '12px',
-                    width: '500px',
-                    textAlign: 'center',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                }}
-            >
-                <h1>🩺 Waiting Room</h1>
+      <main className="waiting-room waiting-centered">
+        <Video size={34} />
+        <h1>Consultation session not found</h1>
+        <button type="button" onClick={() => navigate('/patient-dashboard')}>
+          <ArrowLeft size={18} />
+          Back to dashboard
+        </button>
+      </main>
+    );
+  }
 
-                <h2>
-                    Dr. {session.doctorId.firstName} {session.doctorId.lastName}
-                </h2>
+  return (
+    <main className="waiting-room">
+      <section className="waiting-card">
+        <button className="waiting-back" type="button" onClick={() => navigate('/patient-dashboard')}>
+          <ArrowLeft size={18} />
+          Back
+        </button>
 
-                <p>
+        <header className="waiting-header">
+          <span>Online consultation</span>
+          <h1>Waiting room</h1>
+          <p>We will let you know as soon as your doctor joins the consultation room.</p>
+        </header>
 
-                    {session.doctorId.specialization}
+        <section className="doctor-identity-card">
+          <div className="doctor-avatar">
+            <Stethoscope size={24} />
+          </div>
+          <div>
+            <h2>Dr. {session.doctorId.firstName} {session.doctorId.lastName}</h2>
+            <p>{session.doctorId.specialization}</p>
+          </div>
+        </section>
 
-                </p>
-
-                <p>
-
-                    Status:
-                    {' '}
-
-                    {session.status}
-
-                </p>
-
-                <p>
-
-                    Room:
-                    {session.roomId}
-
-                </p>
-
-               {doctorConnected ? (
-
-                    <>
-                        <div
-                            style={{
-                                marginTop: '2rem',
-                                marginBottom: '1rem',
-                                fontSize: '3rem'
-                            }}
-                        >
-                            🟢
-                        </div>
-
-                        <h3
-                            style={{
-                                color: '#16a34a'
-                            }}
-                        >
-                            Doctor is ready
-                        </h3>
-
-                        <p>
-                            Your doctor has joined the consultation.
-                        </p>
-
-                        <button
-                            onClick={() => {
-                                navigate(`/consultation/${session._id}`);
-                            }}
-                            style={{
-                                marginTop: '1.5rem',
-                                background: '#2563eb',
-                                color: 'white',
-                                border: 'none',
-                                padding: '12px 24px',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                fontSize: '16px'
-                            }}
-                        >
-                            Join Consultation
-                        </button>
-                    </>
-
-                ) : (
-
-                    <>
-                        <p>
-                            Waiting for your doctor...
-                        </p>
-
-                        <div
-                            style={{
-                                marginTop: '2rem',
-                                marginBottom: '2rem',
-                                fontSize: '3rem'
-                            }}
-                        >
-                            ⏳
-                        </div>
-
-                        <p>
-                            Waiting for your doctor to join...
-                        </p>
-                    </>
-
-                )}
-            </div>
+        <div className="waiting-metadata">
+          <span>Status: {session.status}</span>
+          <span>Room: {session.roomId}</span>
         </div>
-    );
+
+        {doctorConnected ? (
+          <section className="waiting-state ready">
+            <CheckCircle2 size={34} />
+            <h2>Doctor is ready</h2>
+            <p>Your doctor has joined. You can enter the consultation room now.</p>
+            <button type="button" onClick={() => navigate(`/consultation/${session._id}`)}>
+              <Video size={18} />
+              Join consultation
+            </button>
+          </section>
+        ) : (
+          <section className="waiting-state pending">
+            <Clock size={34} />
+            <h2>Waiting for your doctor</h2>
+            <p>Stay on this screen. The join button appears when your doctor is ready.</p>
+          </section>
+        )}
+      </section>
+    </main>
+  );
 };
 
 export default PatientWaitingRoom;
