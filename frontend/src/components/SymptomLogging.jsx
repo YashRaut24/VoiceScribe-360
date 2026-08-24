@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';import { User, ArrowLeft } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Mic, PenLine, User, X } from 'lucide-react';
 import api from '../services/api';
 import './SymptomLogging.css';
 import { useAuth } from '../contexts/useAuth';
@@ -11,7 +12,7 @@ const SymptomLogging = () => {
   const [speakInput, setSpeakInput] = useState(false);
   const [symptomText, setSymptomText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const [careSessions, setCareSessions] = useState(['Care Session 001']);
+  const [careSessions] = useState(['Care Session 001']);
   const [fetchedSymptoms, setFetchedSymptoms] = useState([]);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -230,10 +231,11 @@ const handleSubmitText = async () => {
                 <User size={40} />
             </div>
             <p className="profile-name">{user?.firstName} {user?.lastName}</p>
+            <span className="profile-context">Symptom history</span>
         </div>
 
           <div className="care-sessions-section">
-            <h3 className="care-sessions-title">Care Sessions</h3>
+            <h3 className="care-sessions-title">Care sessions</h3>
             <div className="care-sessions-list">
               {careSessions.map((session, index) => (
                 <div 
@@ -265,14 +267,16 @@ const handleSubmitText = async () => {
         className={`control-btn ${textInput ? 'active' : ''}`}
         onClick={handleTypeClick}
     >
+        <PenLine size={18} />
         Type
     </button>
     <span className="or-text">OR</span>
     <button
-        className={`control-btn ${speakInput || isRecording ? 'active' : ''}`}
+        className={`control-btn ${speakInput || isRecording ? 'active recording' : ''}`}
         onClick={handleSpeakClick}
     >
-        {isRecording ? 'Recording...' : 'Speak'}
+        <Mic size={18} />
+        {isRecording ? 'Recording' : 'Speak'}
     </button>
 </div>
 
@@ -286,7 +290,7 @@ const handleSubmitText = async () => {
     <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f0fdf4',
         border: '1px solid #86efac', borderRadius: '0.5rem' }}>
         <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#16a34a', fontWeight: '600' }}>
-            🎤 Recording... speak your symptoms. Click "Recording..." to stop.
+            Recording symptoms. Speak naturally, then select Recording to stop.
         </p>
         <p style={{ margin: 0, color: '#374151', fontSize: '0.9rem', minHeight: '40px' }}>
             {liveTranscript || 'Listening...'}
@@ -302,7 +306,7 @@ const handleSubmitText = async () => {
     </div>
 )}
 
-            <p className="instruction-text">About your symptoms</p>
+            <p className="instruction-text">What are you experiencing?</p>
             {textInput && (
               <div className="text-input-area">
                 <textarea
@@ -383,10 +387,10 @@ const handleSubmitText = async () => {
               <button className="action-btn" onClick={() => navigate('/patient/timeline')}>
                   Generate timeline
               </button>
-              <button className="action-btn" onClick={handleAnalyzeSymptoms}>
-                  Ask Clinsight AI
+              <button className="action-btn ai" onClick={handleAnalyzeSymptoms}>
+                  Symptom pattern summary
               </button>
-              <button className="action-btn" onClick={handleStopSession}>
+              <button className="action-btn danger" onClick={handleStopSession}>
                 Stop session
               </button>
             </div>
@@ -408,7 +412,7 @@ const handleSubmitText = async () => {
                   Timeline
               </button>
               <button className="summary-btn" onClick={handleShare}>
-                  {shareSuccess ? '✓ Copied!' : 'Share 📤'}
+                  {shareSuccess ? 'Copied' : 'Share summary'}
               </button>
             </div>
 
@@ -449,13 +453,13 @@ const handleSubmitText = async () => {
         <div className="analysis-modal-overlay">
           <div className="analysis-modal">
             <div className="analysis-modal-header">
-              <h2>🧠 Clinsight AI Analysis</h2>
+              <h2>Symptom pattern summary</h2>
 
               <button
                 className="analysis-close-btn"
                 onClick={() => setShowAnalysisModal(false)}
               >
-                ✕
+                <X size={20} />
               </button>
             </div>
 
