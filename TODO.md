@@ -1,3 +1,4 @@
-- [ ] Update index.css for global background to #F8FAFC
-- [ ] Refine PatientDashboard.css to match design system
-- [ ] Major update to SymptomLogging.css: replace black borders, add border-radius, box-shadows, apply color palette
+- [x] Update index.css and index.html for global background, design system tokens, and typography
+- [x] Refine PatientDashboard.css to match design system
+- [x] Major update to SymptomLogging.css: replace black borders, add border-radius, box-shadows, apply color palette
+- [x] Redesign ConsultationRoom.css to use unified clinical intelligence tokens, states, and clinical note layout
