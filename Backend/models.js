@@ -140,12 +140,40 @@ medicalRecordSchema.index({ doctorId: 1, createdAt: -1 });
 medicalRecordSchema.index({ patientId: 1, createdAt: -1 });
 
 const loginSessionSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  loginTime: { type: Date, default: Date.now },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+
+  refreshTokenHash: {
+    type: String,
+    required: true,
+    unique: true
+  },
+
+  loginTime: {
+    type: Date,
+    default: Date.now
+  },
+
+  expiresAt: {
+    type: Date,
+    required: true
+  },
+
+  revokedAt: {
+    type: Date,
+    default: null
+  },
+
   ipAddress: String,
+
   userAgent: String
 });
+
 loginSessionSchema.index({ userId: 1, loginTime: -1 });
+loginSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const symptomLogSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },

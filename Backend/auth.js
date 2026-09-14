@@ -5,7 +5,7 @@ const { User, LoginSession } = require('./models');
 const { validate } = require('./middleware/validation.middleware');
 const { registerSchema, loginSchema } = require('./validators/auth.validator');
 const audit = require('./middleware/audit.middleware');
-
+const crypto = require('crypto');
 const JWT_SECRET = process.env.JWT_SECRET;
 const router = express.Router();
 if (!JWT_SECRET) {
@@ -68,7 +68,73 @@ const {
     next(error);
   }
 });
+router.post('/login', validate(loginSchema), audit('LOGIN', 'User'), async (req, res, next) => {
+  try {
+    const { email, password, userType } = req.body;
 
+    const user = await User.findOne({ email, userType });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const accessToken = jwt.sign(
+      {
+        userId: user._id,
+        userType: user.userType
+      },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    const refreshToken = crypto.randomBytes(64).toString('hex');
+
+    const refreshTokenHash = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
+
+    const refreshTokenExpiresAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000
+    );
+
+    const loginSession = new LoginSession({
+      userId: user._id,
+      refreshTokenHash,
+      expiresAt: refreshTokenExpiresAt,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
+    await loginSession.save();
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      expires: refreshTokenExpiresAt
+    });
+
+    res.json({
+      token: accessToken,
+      user: {
+        id: user._id,
+        email: user.email,
+        userType: user.userType,
+        firstName: user.firstName,
+        lastName: user.lastName
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}); 
 router.post('/login', validate(loginSchema), audit('LOGIN', 'User'), async (req, res, next) => {  try {
     const { email, password, userType } = req.body;
     
@@ -81,27 +147,6 @@ router.post('/login', validate(loginSchema), audit('LOGIN', 'User'), async (req,
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
-
-    const token = jwt.sign({ userId: user._id, userType: user.userType }, JWT_SECRET, { expiresIn: '7d' });
-    
-    // Store login session
-    const loginSession = new LoginSession({
-      userId: user._id,
-      ipAddress: req.ip,
-      userAgent: req.get('User-Agent')
-    });
-    await loginSession.save();
-    
-    res.json({
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        userType: user.userType,
-        firstName: user.firstName,
-        lastName: user.lastName
-      }
-    });
   } catch (error) {
     next(error);
   }

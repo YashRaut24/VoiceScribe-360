@@ -13,6 +13,7 @@ const { initializeSocket } = require('./socket/socket');
 const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 3000;
+const cookieParser = require('cookie-parser');
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -67,6 +68,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use(mongoSanitize());
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/voicescribe')
