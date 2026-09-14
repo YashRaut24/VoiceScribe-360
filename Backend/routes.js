@@ -353,11 +353,8 @@ router.get('/consultation-session/:appointmentId',auth,requireRole('doctor', 'pa
         try {
 
             const session = await ConsultationSession.findOne({
-                appointmentId: req.params.appointmentId,
-                $or: [
-                    { doctorId: req.user.userId },
-                    { patientId: req.user.userId }
-                ]
+                _id: req.params.id,
+                doctorId: req.user.userId
             })
             .populate(
                 'doctorId',
@@ -385,13 +382,9 @@ router.get('/consultation-session/:appointmentId',auth,requireRole('doctor', 'pa
 router.get('/consultation-session/:id/details', auth, requireRole('doctor', 'patient'), async (req, res, next) => {
         try {
 
-            const session = await ConsultationSession
-                .findOne({
+                const session = await ConsultationSession.findOne({
                     _id: req.params.id,
-                    $or: [
-                        { doctorId: req.user.userId },
-                        { patientId: req.user.userId }
-                    ]
+                    doctorId: req.user.userId
                 })
                 .populate(
                     'doctorId',
@@ -423,10 +416,7 @@ router.patch('/consultation-session/:id/content', auth, requireRole('doctor'), a
     try {
         const session = await ConsultationSession.findOne({
             _id: req.params.id,
-            $or: [
-                { doctorId: req.user.userId },
-                { patientId: req.user.userId }
-            ]
+            doctorId: req.user.userId
         });
 
         if (!session) {
@@ -674,10 +664,7 @@ router.get(
         try {
             const session = await ConsultationSession.findOne({
                 _id: req.params.id,
-                $or: [
-                    { doctorId: req.user.userId },
-                    { patientId: req.user.userId }
-                ]
+                doctorId: req.user.userId
             });
 
             if (!session || !session.recordingUrl) {
