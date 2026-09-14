@@ -816,7 +816,14 @@ router.get('/dashboard/stats', auth, requireRole('doctor'), async (req, res, nex
 
 router.get('/patients', auth, requireRole('doctor'), async (req, res, next) => {
   try {
-    const patients = await User.find({ userType: 'patient' })
+    const patientIds = await Appointment.distinct('patientId', {
+      doctorId: req.user.userId
+    });
+
+    const patients = await User.find({
+      _id: { $in: patientIds },
+      userType: 'patient'
+    })
       .select('firstName lastName email')
       .sort({ firstName: 1 });
 
