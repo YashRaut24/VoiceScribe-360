@@ -1,7 +1,6 @@
 const express = require('express');
 const { Appointment, MedicalRecord, User, SymptomLog, SymptomLogDoctor,Notification, ConsultationSession, } = require('./models');
 const auth = require('./middleware/auth.middleware');
-const axios = require('axios');
 const { validate } = require('./middleware/validation.middleware');
 const { createAppointmentSchema } = require('./validators/appointment.validator');
 const { createMedicalRecordSchema } = require('./validators/medicalRecord.validator');
@@ -10,9 +9,15 @@ const requireRole = require('./middleware/role.middleware');
 const upload = require('./middleware/upload.middleware');
 const audit = require('./middleware/audit.middleware');
 const { getIO } = require('./socket/socket');
+const {
+    analyzeSymptoms,
+    extractSymptoms,
+    generateSoapNotes,
+    transcribeAudio
+} = require('./services/llm.service');
 const router = express.Router();
-const FormData = require('form-data');
 const fs = require('fs');
+const path = require('path');
 
 router.get('/appointments', auth, requireRole('doctor', 'patient'), audit('VIEW_APPOINTMENTS', 'Appointment'), async (req, res, next) => {
   try {
@@ -150,29 +155,10 @@ router.post(
                 });
             }
 
-            const formData = new FormData();
-
-            formData.append(
-                'audio',
-                fs.createReadStream(req.file.path),
-                {
-                    filename: req.file.originalname,
-                    contentType: req.file.mimetype
-                }
-            );
-
-            const response = await axios.post(
-                'http://localhost:5000/transcribe',
-                formData,
-                {
-                    headers: {
-                        ...formData.getHeaders()
-                    }
-                }
-            );
+            const transcript = await transcribeAudio(req.file);
 
             res.json({
-                transcript: response.data.transcript
+                transcript
             });
 
         } catch (error) {
@@ -183,7 +169,10 @@ router.post(
             );
 
             next(error);
-
+        } finally {
+            if (req.file?.path) {
+                await fs.promises.unlink(req.file.path).catch(() => {});
+            }
         }
 
     }
@@ -617,22 +606,111 @@ router.patch(
     }
 );
 
-router.post('/upload-audio', auth, requireRole('doctor'), audit('UPLOAD_AUDIO', 'MedicalRecord'), upload.single('audio'), async (req, res, next) => {    try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'No audio file uploaded' });
+router.post(
+    '/upload-audio',
+    auth,
+    requireRole('doctor'),
+    audit('UPLOAD_AUDIO', 'MedicalRecord'),
+    upload.single('audio'),
+    async (req, res, next) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({
+                    message: 'No audio file uploaded'
+                });
+            }
+
+            const { consultationSessionId } = req.body;
+
+            if (!consultationSessionId) {
+                await fs.promises.unlink(req.file.path).catch(() => {});
+
+                return res.status(400).json({
+                    message: 'Consultation session is required'
+                });
+            }
+
+            const session = await ConsultationSession.findOne({
+                _id: consultationSessionId,
+                doctorId: req.user.userId
+            });
+
+            if (!session) {
+                await fs.promises.unlink(req.file.path).catch(() => {});
+
+                return res.status(404).json({
+                    message: 'Consultation session not found'
+                });
+            }
+
+            const previousRecording = session.recordingUrl;
+            session.recordingUrl = req.file.filename;
+            await session.save();
+
+            if (previousRecording && previousRecording !== req.file.filename) {
+                const previousPath = path.join(__dirname, 'uploads', path.basename(previousRecording));
+                await fs.promises.unlink(previousPath).catch(() => {});
+            }
+
+            res.status(201).json({
+                filename: req.file.filename,
+                size: req.file.size
+            });
+        } catch (error) {
+            if (req.file?.path) {
+                await fs.promises.unlink(req.file.path).catch(() => {});
+            }
+
+            next(error);
         }
-
-        const audioUrl = `/uploads/${req.file.filename}`;
-
-        res.status(201).json({
-            audioUrl,
-            filename: req.file.filename,
-            size: req.file.size
-        });
-    } catch (error) {
-        next(error);
     }
-});
+);
+
+router.get(
+    '/consultation-session/:id/audio',
+    auth,
+    requireRole('doctor', 'patient'),
+    async (req, res, next) => {
+        try {
+            const session = await ConsultationSession.findOne({
+                _id: req.params.id,
+                $or: [
+                    { doctorId: req.user.userId },
+                    { patientId: req.user.userId }
+                ]
+            });
+
+            if (!session || !session.recordingUrl) {
+                return res.status(404).json({
+                    message: 'Audio recording not found'
+                });
+            }
+
+            const audioPath = path.join(
+                __dirname,
+                'uploads',
+                path.basename(session.recordingUrl)
+            );
+
+            try {
+                await fs.promises.access(audioPath);
+            } catch {
+                return res.status(404).json({
+                    message: 'Audio recording not found'
+                });
+            }
+
+            res.sendFile(audioPath, {
+                headers: {
+                    'Content-Disposition': 'inline',
+                    'Cache-Control': 'private, no-store'
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
 
 router.post('/generate-soap', auth, requireRole('doctor'), audit('GENERATE_SOAP', 'MedicalRecord'), async (req, res, next) => {    try {
         const { transcript } = req.body;
@@ -641,11 +719,9 @@ router.post('/generate-soap', auth, requireRole('doctor'), audit('GENERATE_SOAP'
             return res.status(400).json({ message: 'Transcript is required' });
         }
 
-        const response = await axios.post('http://localhost:5000/generate-soap', {
-            transcript
-        });
+        const soapNotes = await generateSoapNotes(transcript);
 
-        res.json(response.data);
+        res.json({ soapNotes });
 
         } catch (error) {
 
@@ -668,11 +744,9 @@ router.post('/analyze-symptoms', auth, requireRole('patient'), audit('ANALYZE_SY
             });
         }
 
-        const response = await axios.post('http://localhost:5000/analyze-symptoms', {
-            symptoms
-        });
+        const analysis = await analyzeSymptoms(symptoms);
 
-        res.json(response.data);
+        res.json({ analysis });
 
     } catch (error) {
     if (error.response?.data) {
@@ -769,13 +843,7 @@ router.post('/symptoms', auth, requireRole('patient'), audit('CREATE_SYMPTOM', '
     let structuredData = null;
 
     try {
-      const llmResponse = await axios.post("http://localhost:5000/extract", {
-        symptoms: symptomsText,
-      });
-
-      console.log("LLM STRUCTURED DATA 👉", llmResponse.data);
-
-      structuredData = llmResponse.data.structuredData;
+            structuredData = await extractSymptoms(symptomsText);
     } catch (llmError) {
       console.error('LLM Service Error:', llmError.response?.data || llmError.message);
     }

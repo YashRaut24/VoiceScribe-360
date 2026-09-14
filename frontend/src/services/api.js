@@ -157,7 +157,8 @@ class ApiService {
       body: JSON.stringify(content)
     });
   }
-async transcribeAudio(audioBlob) {
+
+async transcribeAudio(audioBlob, sessionId) {
 
     const formData = new FormData();
 
@@ -166,6 +167,7 @@ async transcribeAudio(audioBlob) {
         audioBlob,
         'consultation.webm'
     );
+    formData.append('consultationSessionId', sessionId);
 
     const url = `${API_BASE_URL}/transcribe-audio`;
 
@@ -250,9 +252,10 @@ async transcribeAudio(audioBlob) {
   }
 
   // Audio
-  async uploadAudio(audioBlob) {
+  async uploadAudio(audioBlob, sessionId) {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'consultation.webm');
+      formData.append('consultationSessionId', sessionId);
 
       const url = `${API_BASE_URL}/upload-audio`;
       let response;

@@ -348,7 +348,7 @@ function ConsultationRoom() {
                     const audioBlob = new Blob(audioChunksRef.current, {
                         type: 'audio/webm'
                     });
-                    const result = await apiService.transcribeAudio(audioBlob);
+                    const result = await apiService.transcribeAudio(audioBlob, sessionId);
 
                     if (socket?.connected && session?.roomId) {
                         socket.emit('transcript-update', {
