@@ -219,19 +219,33 @@ function registerConsultationSocket(io, socket) {
         }
     });
 
-    socket.on('transcript-update', ({ roomId, transcript } = {}, callback) => {
+    socket.on('transcript-update', async ({ roomId, transcript } = {}, callback) => {
         if (socket.role !== 'doctor' || socket.roomId !== roomId || !String(transcript || '').trim()) {
             emitConsultationError(socket, callback, 'Unable to sync transcript update.', 'TRANSCRIPT_SYNC_ERROR');
             return;
         }
 
-        socket.to(roomId).emit('transcript-update', {
-            transcript
-        });
+        if (String(transcript).length > 50000) {
+            emitConsultationError(socket, callback, 'Transcript is too long.', 'VALIDATION_ERROR');
+            return;
+        }
 
-        acknowledge(callback, {
-            ok: true
-        });
+        try {
+            const session = await ConsultationSession.findOneAndUpdate(
+                { roomId, doctorId: socket.user.userId, status: { $in: ACTIVE_SESSION_STATUSES } },
+                { $set: { transcript } },
+                { new: true }
+            );
+            if (!session) {
+                emitConsultationError(socket, callback, 'Consultation session not found.', 'SESSION_NOT_FOUND');
+                return;
+            }
+            socket.to(roomId).emit('transcript-update', { transcript });
+            acknowledge(callback, { ok: true, transcript: session.transcript });
+        } catch (error) {
+            console.error('Transcript persistence failed:', error.message);
+            emitConsultationError(socket, callback, 'Unable to save transcript.', 'TRANSCRIPT_SYNC_ERROR');
+        }
     });
 
     socket.on('end-consultation', async (roomId, callback) => {

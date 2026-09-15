@@ -17,4 +17,26 @@ const createMedicalRecordSchema = Joi.object({
     audioFileUrl: Joi.string().optional().allow(null, '')
 });
 
-module.exports = { createMedicalRecordSchema };
+const patchMedicalRecordSchema = Joi.object({
+    voiceTranscription: Joi.string().trim().max(5000).allow(''),
+    soapNotes: Joi.object({
+        subjective: Joi.string().trim().max(2000).allow(''),
+        objective: Joi.string().trim().max(2000).allow(''),
+        assessment: Joi.string().trim().max(2000).allow(''),
+        plan: Joi.string().trim().max(2000).allow('')
+    }),
+    diagnosis: Joi.string().trim().max(1000).allow(''),
+    prescription: Joi.string().trim().max(1000).allow('')
+}).min(1).unknown(false);
+
+const consultationContentSchema = Joi.object({
+    transcript: Joi.string().trim().max(50000),
+    soapNotes: Joi.object({
+        subjective: Joi.string().trim().max(10000).allow(''),
+        objective: Joi.string().trim().max(10000).allow(''),
+        assessment: Joi.string().trim().max(10000).allow(''),
+        plan: Joi.string().trim().max(10000).allow('')
+    }).unknown(false)
+}).min(1).unknown(false);
+
+module.exports = { createMedicalRecordSchema, patchMedicalRecordSchema, consultationContentSchema };

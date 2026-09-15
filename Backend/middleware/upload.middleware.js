@@ -46,4 +46,17 @@ const upload = multer({
     storage,fileFilter,limits:{fileSize: 50 * 1024 * 1024}
 });
 
+const validateAudioSignature = async (file) => {
+    const header = await fs.promises.readFile(file.path, { encoding: null });
+    return (
+        header.slice(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3])) ||
+        header.slice(0, 4).toString() === 'OggS' ||
+        (header.slice(0, 4).toString() === 'RIFF' && header.slice(8, 12).toString() === 'WAVE') ||
+        header.slice(0, 3).toString() === 'ID3' ||
+        (header[0] === 0xff && (header[1] & 0xe0) === 0xe0) ||
+        header.slice(4, 8).toString() === 'ftyp'
+    );
+};
+
 module.exports = upload;
+module.exports.validateAudioSignature = validateAudioSignature;

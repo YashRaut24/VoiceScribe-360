@@ -27,21 +27,17 @@ const createRequestError = (response, data, fallbackMessage) => {
   return err;
 };
 
-const getToken = () => localStorage.getItem('token');
-
 class ApiService {
   constructor() {
-    this.token = localStorage.getItem('token');
+    this.token = null;
   }
 
   setToken(token) {
     this.token = token;
-    localStorage.setItem('token', token);
   }
 
   removeToken() {
     this.token = null;
-    localStorage.removeItem('token');
   }
 
   async request(endpoint, options = {}) {
@@ -52,13 +48,8 @@ class ApiService {
         ...options.headers,
       },
       ...options,
+      credentials: 'include',
     };
-
-    const token = localStorage.getItem('token');
-
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
 
     let response;
 
@@ -84,10 +75,6 @@ class ApiService {
       body: JSON.stringify({ email, password, userType }),
     });
     
-    if (response.token) {
-      this.setToken(response.token);
-    }
-    
     return response;
   }
 
@@ -97,15 +84,15 @@ class ApiService {
       body: JSON.stringify(userData),
     });
     
-    if (response.token) {
-      this.setToken(response.token);
-    }
-    
     return response;
   }
 
   async verifyToken() {
     return this.request('/auth/verify');
+  }
+
+  async logout() {
+    return this.request('/auth/logout', { method: 'POST' });
   }
 
   // Appointments
@@ -176,9 +163,7 @@ async transcribeAudio(audioBlob, sessionId) {
     try {
         response = await fetch(url, {
         method: 'POST',
-        headers: {
-            Authorization: `Bearer ${getToken()}`
-        },
+        credentials: 'include',
         body: formData
         });
     } catch (error) {
@@ -263,9 +248,7 @@ async transcribeAudio(audioBlob, sessionId) {
       try {
           response = await fetch(url, {
           method: 'POST',
-          headers: {
-              Authorization: `Bearer ${getToken()}`
-          },
+            credentials: 'include',
           body: formData
           });
       } catch (error) {

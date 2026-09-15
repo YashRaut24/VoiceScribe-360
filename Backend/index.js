@@ -17,7 +17,7 @@ const cookieParser = require('cookie-parser');
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10000,
+    max: 20,
     message: {
         success: false,
         message: 'Too many attempts. Please try again after 15 minutes.'
@@ -28,7 +28,7 @@ const authLimiter = rateLimit({
 
 const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 1000,
+    max: 300,
     message: {
         success: false,
         message: 'Too many requests. Please try again after 15 minutes.'
@@ -71,16 +71,21 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(mongoSanitize());
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/voicescribe')
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('MongoDB connection error:', err));
-
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api', generalLimiter, apiRoutes);
 console.log('API routes loaded');
 
+app.get('/health/live', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
+app.get('/health/ready', (req, res) => {
+    const ready = mongoose.connection.readyState === 1;
+    res.status(ready ? 200 : 503).json({ status: ready ? 'ok' : 'unavailable' });
+});
+
 app.get('/health', (req, res) => {
-    res.json({ status: 'OK', message: 'VoiceScribe Backend is running' });
+    res.redirect('/health/ready');
 });
 
 app.use(errorHandler);
@@ -88,6 +93,17 @@ app.use(errorHandler);
 
 initializeSocket(server);
 
-server.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-});
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/voicescribe')
+    .then(() => server.listen(port, () => console.log(`Server is running on http://localhost:${port}`)))
+    .catch(err => {
+        console.error('MongoDB connection error:', err.message);
+        process.exitCode = 1;
+    });
+
+const shutdown = async () => {
+    await new Promise(resolve => server.close(resolve));
+    await mongoose.connection.close(false);
+    process.exit(0);
+};
+process.once('SIGTERM', shutdown);
+process.once('SIGINT', shutdown);

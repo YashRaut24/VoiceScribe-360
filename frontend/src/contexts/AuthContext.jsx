@@ -3,10 +3,9 @@ import apiService from '../services/api';
 import AuthContext from './auth-context';
 
 const getStoredUser = () => {
-    const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
 
-    if (!token || !userData) {
+    if (!userData) {
         return null;
     }
 
@@ -14,7 +13,6 @@ const getStoredUser = () => {
         return JSON.parse(userData);
     } catch {
         localStorage.removeItem('user');
-        apiService.removeToken();
         return null;
     }
 };
@@ -25,20 +23,11 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const verifyStoredToken = async () => {
-            const token = localStorage.getItem('token');
-
-            if (!token) {
-                setLoading(false);
-                return;
-            }
-
-            apiService.setToken(token);
-
             try {
                 const response = await apiService.verifyToken();
                 setUser(response.user);
                 localStorage.setItem('user', JSON.stringify(response.user));
-            } catch (error) {
+            } catch {
                 setUser(null);
                 apiService.removeToken();
                 localStorage.removeItem('user');
@@ -68,6 +57,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         apiService.removeToken();
         localStorage.removeItem('user');
+        apiService.logout();
     };
 
     const value = {

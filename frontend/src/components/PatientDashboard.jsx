@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { createElement, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Activity,
@@ -159,7 +159,7 @@ const PatientDashboard = () => {
         <section className="patient-stat-strip" aria-label="Health journey summary">
           {journeyStats.map(({ label, value, detail, icon: Icon }) => (
             <article className="patient-stat" key={label}>
-              <Icon size={20} />
+              {createElement(Icon, { size: 20 })}
               <div>
                 <span>{label}</span>
                 <strong>{value}</strong>

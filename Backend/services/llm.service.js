@@ -7,6 +7,15 @@ const CHAT_MODEL = 'openai/gpt-oss-20b';
 const TRANSCRIPTION_MODEL = 'whisper-large-v3-turbo';
 const REQUEST_TIMEOUT_MS = 120000;
 
+const assertProviderApproved = () => {
+    if (process.env.LLM_PROVIDER_APPROVED !== 'true' || process.env.LLM_PHI_PROCESSING_CONSENT !== 'true') {
+        const error = new Error('LLM provider is not approved for clinical data processing');
+        error.status = 503;
+        error.publicMessage = 'Clinical AI processing is temporarily unavailable';
+        throw error;
+    }
+};
+
 const getHeaders = () => {
     if (!process.env.GROQ_API_KEY) {
         throw new Error('GROQ_API_KEY is not configured');
@@ -30,6 +39,7 @@ const parseJsonResponse = (content) => {
 };
 
 const completeChat = async (prompt, temperature) => {
+    assertProviderApproved();
     const response = await axios.post(
         `${GROQ_API_URL}/chat/completions`,
         {
@@ -133,6 +143,7 @@ ${symptomsText}
 };
 
 const transcribeAudio = async (file) => {
+    assertProviderApproved();
     if (!process.env.GROQ_API_KEY) {
         throw new Error('GROQ_API_KEY is not configured');
     }

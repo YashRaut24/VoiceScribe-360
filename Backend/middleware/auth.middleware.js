@@ -11,7 +11,7 @@ const auth = (req, res, next) => {
         const authorization = req.header('Authorization');
         const token = authorization?.startsWith('Bearer ')
             ? authorization.slice(7)
-            : null;
+            : req.cookies?.accessToken;
 
         if (!token) {
             return res.status(401).json({ message: 'No token, authorization denied' });

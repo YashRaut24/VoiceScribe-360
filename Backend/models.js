@@ -29,7 +29,7 @@ const appointmentSchema = new mongoose.Schema({
   duration: { type: Number, default: 30 },
   type: { type: String, enum: ['clinic', 'online'],  default: 'clinic' },
   status: { type: String, enum: ['pending','accepted','rejected','scheduled','waiting','ongoing','completed','cancelled'],default: 'scheduled'},
-  notes: String,
+  notes: { type: String, maxlength: 500 },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -87,16 +87,13 @@ const consultationSessionSchema = new mongoose.Schema({
         default: 0
     },
 
-    transcript: {
-        type: String,
-        default: ''
-    },
+    transcript: { type: String, default: '', maxlength: 50000 },
 
     soapNotes: {
-        subjective: { type: String, default: '' },
-        objective: { type: String, default: '' },
-        assessment: { type: String, default: '' },
-        plan: { type: String, default: '' }
+        subjective: { type: String, default: '', maxlength: 10000 },
+        objective: { type: String, default: '', maxlength: 10000 },
+        assessment: { type: String, default: '', maxlength: 10000 },
+        plan: { type: String, default: '', maxlength: 10000 }
     },
 
     recordingUrl: {
@@ -117,7 +114,7 @@ const consultationSessionSchema = new mongoose.Schema({
 
 consultationSessionSchema.index({ doctorId: 1, status: 1 });
 consultationSessionSchema.index({ patientId: 1, status: 1 });
-consultationSessionSchema.index({ appointmentId: 1 });
+consultationSessionSchema.index({ appointmentId: 1 }, { unique: true });
 
 const medicalRecordSchema = new mongoose.Schema({
   patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -225,6 +222,7 @@ const auditLogSchema = new mongoose.Schema({
             'GENERATE_SOAP',
             'TOKEN_VERIFIED',
             'UPDATE_MEDICAL_RECORD',
+            'ANALYZE_SYMPTOMS',
         ],
         required: true
     },

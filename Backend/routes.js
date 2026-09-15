@@ -3,10 +3,11 @@ const { Appointment, MedicalRecord, User, SymptomLog, SymptomLogDoctor,Notificat
 const auth = require('./middleware/auth.middleware');
 const { validate } = require('./middleware/validation.middleware');
 const { createAppointmentSchema } = require('./validators/appointment.validator');
-const { createMedicalRecordSchema } = require('./validators/medicalRecord.validator');
+const { createMedicalRecordSchema, patchMedicalRecordSchema, consultationContentSchema } = require('./validators/medicalRecord.validator');
 const { createSymptomSchema } = require('./validators/symptom.validator');
 const requireRole = require('./middleware/role.middleware');
 const upload = require('./middleware/upload.middleware');
+const { validateAudioSignature } = upload;
 const audit = require('./middleware/audit.middleware');
 const { getIO } = require('./socket/socket');
 const {
@@ -43,6 +44,19 @@ router.post('/appointments', auth, requireRole('patient'), audit('CREATE_APPOINT
     if (!doctor) {
       return res.status(404).json({ message: 'Doctor not found' });
     }
+
+        const appointmentEnd = new Date(new Date(date).getTime() + Number(duration) * 60 * 1000);
+        const conflict = await Appointment.findOne({
+            $or: [{ doctorId }, { patientId: req.user.userId }],
+            status: { $in: ['scheduled', 'accepted', 'waiting', 'ongoing'] },
+            $expr: {
+                $and: [
+                    { $lt: ['$date', appointmentEnd] },
+                    { $gt: [{ $add: ['$date', { $multiply: ['$duration', 60000] }] }, new Date(date)] }
+                ]
+            }
+        });
+        if (conflict) return res.status(409).json({ message: 'The requested appointment time is unavailable' });
 
     const appointment = new Appointment({
       doctorId,
@@ -155,6 +169,11 @@ router.post(
                 });
             }
 
+            if (!(await validateAudioSignature(req.file))) {
+                await fs.promises.unlink(req.file.path).catch(() => {});
+                return res.status(400).json({ message: 'The uploaded audio file is malformed' });
+            }
+
             const transcript = await transcribeAudio(req.file);
 
             res.json({
@@ -265,6 +284,13 @@ router.patch('/appointments/:id/status', auth, requireRole('doctor'), async (req
             return res.status(400).json({ message: 'Invalid status value' });
         }
 
+        if (status === 'accepted') {
+            const appointmentForType = await Appointment.findOne({ _id: req.params.id, doctorId: req.user.userId }).select('type');
+            if (appointmentForType?.type !== 'online') {
+                return res.status(400).json({ message: 'Only online appointments can create consultation sessions' });
+            }
+        }
+
         const appointment = await Appointment.findOne({
             _id: req.params.id,
             doctorId: req.user.userId
@@ -274,37 +300,45 @@ router.patch('/appointments/:id/status', auth, requireRole('doctor'), async (req
             return res.status(404).json({ message: 'Appointment not found' });
         }
 
-        appointment.status = status;
-        await appointment.save();
+        const allowedTransitions = {
+            scheduled: ['accepted', 'rejected', 'cancelled'],
+            accepted: ['waiting', 'cancelled'],
+            waiting: ['ongoing', 'cancelled'],
+            ongoing: ['completed', 'cancelled'],
+            rejected: [], completed: [], cancelled: []
+        };
+        if (appointment.status !== status && !allowedTransitions[appointment.status]?.includes(status)) {
+            return res.status(409).json({ message: 'Invalid appointment status transition' });
+        }
+        if (appointment.status !== status) {
+            const updated = await Appointment.findOneAndUpdate(
+                { _id: appointment._id, doctorId: req.user.userId, status: appointment.status },
+                { $set: { status } },
+                { new: true }
+            );
+            if (!updated) return res.status(409).json({ message: 'Appointment status changed; please retry' });
+            appointment.status = updated.status;
+        }
 
 if (status === 'accepted') {
-
-    let session = await ConsultationSession.findOne({
-        appointmentId: appointment._id
-    });
-
-    if (!session) {
-
-        session = await ConsultationSession.create({
+    let session = await ConsultationSession.findOneAndUpdate(
+        { appointmentId: appointment._id },
+        { $set: { status: 'waiting' }, $setOnInsert: {
             appointmentId: appointment._id,
             doctorId: appointment.doctorId,
             patientId: appointment.patientId,
-            roomId: `room_${appointment._id}`,
-            status: 'waiting'
-        });
+            roomId: `room_${appointment._id}`
+        } },
+        { new: true, upsert: true }
+    );
 
-        await Notification.create({
+    if (session.createdAt && Date.now() - session.createdAt.getTime() < 2000) {
+      await Notification.create({
             userId: appointment.patientId,
             title: 'Consultation Accepted',
             message: 'Your online consultation has been accepted by the doctor.',
             type: 'consultation'
         });
-
-    } else {
-
-        session.status = 'waiting';
-        await session.save();
-
     }
 }
         if (status === 'rejected') {
@@ -352,18 +386,15 @@ router.get('/my-online-consultations', auth, requireRole('patient'), async (req,
 router.get('/consultation-session/:appointmentId',auth,requireRole('doctor', 'patient'),async (req, res, next) => {
         try {
 
-            const session = await ConsultationSession.findOne({
-                _id: req.params.id,
-                doctorId: req.user.userId
-            })
-            .populate(
-                'doctorId',
-                'firstName lastName specialization'
-            )
-            .populate(
-                'patientId',
-                'firstName lastName'
-            );
+            const ownership = req.user.userType === 'doctor'
+                ? { doctorId: req.user.userId }
+                : { patientId: req.user.userId };
+            const appointment = await Appointment.findOne({ _id: req.params.appointmentId, ...ownership });
+            const session = appointment
+                ? await ConsultationSession.findOne({ appointmentId: appointment._id })
+                    .populate('doctorId', 'firstName lastName specialization')
+                    .populate('patientId', 'firstName lastName')
+                : null;
 
             if (!session) {
                 return res.status(404).json({
@@ -382,10 +413,10 @@ router.get('/consultation-session/:appointmentId',auth,requireRole('doctor', 'pa
 router.get('/consultation-session/:id/details', auth, requireRole('doctor', 'patient'), async (req, res, next) => {
         try {
 
-                const session = await ConsultationSession.findOne({
-                    _id: req.params.id,
-                    doctorId: req.user.userId
-                })
+                const ownership = req.user.userType === 'doctor'
+                    ? { doctorId: req.user.userId }
+                    : { patientId: req.user.userId };
+                const session = await ConsultationSession.findOne({ _id: req.params.id, ...ownership })
                 .populate(
                     'doctorId',
                     'firstName lastName specialization'
@@ -414,6 +445,8 @@ router.get('/consultation-session/:id/details', auth, requireRole('doctor', 'pat
 
 router.patch('/consultation-session/:id/content', auth, requireRole('doctor'), async (req, res, next) => {
     try {
+        const { error, value } = consultationContentSchema.validate(req.body, { abortEarly: false });
+        if (error) return res.status(400).json({ message: 'Invalid consultation content', errors: error.details.map(detail => detail.message) });
         const session = await ConsultationSession.findOne({
             _id: req.params.id,
             doctorId: req.user.userId
@@ -425,26 +458,18 @@ router.patch('/consultation-session/:id/content', auth, requireRole('doctor'), a
             });
         }
 
-        const { transcript, soapNotes } = req.body;
+        const { transcript, soapNotes } = value;
 
         if (transcript !== undefined) {
-            if (typeof transcript !== 'string') {
-                return res.status(400).json({ message: 'Transcript must be a string' });
-            }
-
             session.transcript = transcript;
         }
 
         if (soapNotes !== undefined) {
-            if (!soapNotes || typeof soapNotes !== 'object' || Array.isArray(soapNotes)) {
-                return res.status(400).json({ message: 'SOAP notes must be an object' });
-            }
-
             session.soapNotes = {
-                subjective: String(soapNotes.subjective || ''),
-                objective: String(soapNotes.objective || ''),
-                assessment: String(soapNotes.assessment || ''),
-                plan: String(soapNotes.plan || '')
+                subjective: soapNotes.subjective || '',
+                objective: soapNotes.objective || '',
+                assessment: soapNotes.assessment || '',
+                plan: soapNotes.plan || ''
             };
         }
 
@@ -565,11 +590,13 @@ router.patch(
     audit('UPDATE_MEDICAL_RECORD', 'MedicalRecord'),
     async (req, res, next) => {
         try {
+            const { error, value } = patchMedicalRecordSchema.validate(req.body, { abortEarly: false });
+            if (error) return res.status(400).json({ message: 'Invalid medical record update', errors: error.details.map(detail => detail.message) });
             const {
                 diagnosis,
                 prescription,
                 soapNotes
-            } = req.body;
+            } = value;
 
             const record = await MedicalRecord.findOne({
                 _id: req.params.id,
@@ -582,9 +609,9 @@ router.patch(
                 });
             }
 
-            record.diagnosis = diagnosis;
-            record.prescription = prescription;
-            record.soapNotes = soapNotes;
+            if (diagnosis !== undefined) record.diagnosis = diagnosis;
+            if (prescription !== undefined) record.prescription = prescription;
+            if (soapNotes !== undefined) record.soapNotes = { ...record.soapNotes, ...soapNotes };
 
             await record.save();
 
@@ -608,6 +635,11 @@ router.post(
                 return res.status(400).json({
                     message: 'No audio file uploaded'
                 });
+            }
+
+            if (!(await validateAudioSignature(req.file))) {
+                await fs.promises.unlink(req.file.path).catch(() => {});
+                return res.status(400).json({ message: 'The uploaded audio file is malformed' });
             }
 
             const { consultationSessionId } = req.body;

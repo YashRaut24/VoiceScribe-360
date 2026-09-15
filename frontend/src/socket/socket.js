@@ -10,9 +10,7 @@ const socket = io(SOCKET_URL, {
     reconnectionDelayMax: 5000,
     timeout: 10000,
     transports: ['websocket', 'polling'],
-    auth: {
-        token: localStorage.getItem('token')
-    }
+    auth: {}
 });
 
 export default socket;

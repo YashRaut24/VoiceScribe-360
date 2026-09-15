@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { createElement, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     Activity,
@@ -236,17 +236,18 @@ function ConsultationRoom() {
         }
 
         const joinRoom = () => {
+            if (!socket.connected) {
+                return;
+            }
+
             socket.emit('join-room', {
                 roomId: session.roomId,
                 role: user.userType
             });
         };
 
-        if (socket.connected) {
-            joinRoom();
-        } else {
-            socket.once('connect', joinRoom);
-        }
+        socket.on('connect', joinRoom);
+        joinRoom();
 
         return () => {
             socket.off('connect', joinRoom);
@@ -350,13 +351,13 @@ function ConsultationRoom() {
                     });
                     const result = await apiService.transcribeAudio(audioBlob, sessionId);
 
+                    setTranscript((previous) => appendTranscriptText(previous, result.transcript));
+
                     if (socket?.connected && session?.roomId) {
                         socket.emit('transcript-update', {
                             roomId: session.roomId,
                             transcript: result.transcript
                         });
-                    } else {
-                        setTranscript((previous) => appendTranscriptText(previous, result.transcript));
                     }
 
                     setDoctorNotice('success', 'Recording transcribed.');
@@ -725,7 +726,7 @@ function ConsultationRoom() {
                                 {connectionRows.map(({ label, name, detail, connected, icon: Icon }) => (
                                     <div className="participant-row" key={label}>
                                         <div className="participant-icon">
-                                            <Icon size={18} />
+                                            {createElement(Icon, { size: 18 })}
                                         </div>
                                         <div>
                                             <span>{label}</span>

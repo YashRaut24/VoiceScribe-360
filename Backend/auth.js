@@ -8,6 +8,13 @@ const audit = require('./middleware/audit.middleware');
 const crypto = require('crypto');
 const JWT_SECRET = process.env.JWT_SECRET;
 const router = express.Router();
+
+const setAccessCookie = (res, token) => res.cookie('accessToken', token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict',
+  maxAge: 15 * 60 * 1000
+});
 if (!JWT_SECRET) {
     throw new Error('JWT_SECRET is not configured');
 }
@@ -51,10 +58,10 @@ const {
     const user = new User(userData);
     await user.save();
 
-    const token = jwt.sign({ userId: user._id, userType: user.userType }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ userId: user._id, userType: user.userType }, JWT_SECRET, { expiresIn: '15m' });
+    setAccessCookie(res, token);
 
     res.status(201).json({
-      token,
       user: {
         id: user._id,
         email: user.email,
@@ -121,8 +128,8 @@ router.post('/login', validate(loginSchema), audit('LOGIN', 'User'), async (req,
       expires: refreshTokenExpiresAt
     });
 
+    setAccessCookie(res, accessToken);
     res.json({
-      token: accessToken,
       user: {
         id: user._id,
         email: user.email,
@@ -134,26 +141,16 @@ router.post('/login', validate(loginSchema), audit('LOGIN', 'User'), async (req,
   } catch (error) {
     next(error);
   }
-}); 
-router.post('/login', validate(loginSchema), audit('LOGIN', 'User'), async (req, res, next) => {  try {
-    const { email, password, userType } = req.body;
-    
-    const user = await User.findOne({ email, userType });
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
+});
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-  } catch (error) {
-    next(error);
-  }
+router.post('/logout', (req, res) => {
+  res.clearCookie('accessToken');
+  res.clearCookie('refreshToken');
+  res.status(204).end();
 });
 
 router.get('/verify', audit('TOKEN_VERIFIED', 'User'), async (req, res, next) => {    try {
-        const token = req.header('Authorization')?.replace('Bearer ', '');
+        const token = req.header('Authorization')?.replace('Bearer ', '') || req.cookies?.accessToken;
 
         if (!token) {
             return res.status(401).json({ message: 'No token provided' });

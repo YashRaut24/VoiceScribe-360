@@ -23,9 +23,10 @@ const errorHandler = (err, req, res, next) => {
         });
     }
 
-    return res.status(err.status || 500).json({
+    const status = err.status && err.status >= 400 && err.status < 500 ? err.status : 500;
+    return res.status(status).json({
         success: false,
-        message: err.message || 'Internal server error'
+        message: status === 500 ? 'Internal server error' : (err.publicMessage || err.message || 'Request failed')
     });
 };
 

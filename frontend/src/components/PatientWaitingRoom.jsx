@@ -9,6 +9,8 @@ const PatientWaitingRoom = () => {
   const { appointmentId } = useParams();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [requestError, setRequestError] = useState(null);
+  const [retryKey, setRetryKey] = useState(0);
   const [doctorConnected, setDoctorConnected] = useState(false);
   const socket = useSocket();
   const navigate = useNavigate();
@@ -18,15 +20,10 @@ const PatientWaitingRoom = () => {
       return undefined;
     }
 
-    const handleConnect = () => {
-      console.log('Patient connected:', socket.id);
-    };
-
     const handleParticipantUpdate = ({ doctorConnected: isDoctorConnected }) => {
       setDoctorConnected(Boolean(isDoctorConnected));
     };
 
-    socket.on('connect', handleConnect);
     socket.on('participant-update', handleParticipantUpdate);
 
     const loadSession = async () => {
@@ -34,20 +31,8 @@ const PatientWaitingRoom = () => {
         const data = await apiService.getConsultationSessionByAppointment(appointmentId);
         setSession(data);
 
-        const joinRoom = () => {
-          socket.emit('join-room', {
-            roomId: data.roomId,
-            role: 'patient'
-          });
-        };
-
-        if (socket.connected) {
-          joinRoom();
-        } else {
-          socket.once('connect', joinRoom);
-        }
       } catch (error) {
-        console.error(error);
+        setRequestError(error);
       } finally {
         setLoading(false);
       }
@@ -56,10 +41,17 @@ const PatientWaitingRoom = () => {
     loadSession();
 
     return () => {
-      socket.off('connect', handleConnect);
       socket.off('participant-update', handleParticipantUpdate);
     };
-  }, [appointmentId, socket]);
+  }, [appointmentId, retryKey, socket]);
+
+  useEffect(() => {
+    if (!socket || !session) return undefined;
+    const joinRoom = () => socket.emit('join-room', { roomId: session.roomId, role: 'patient' });
+    socket.on('connect', joinRoom);
+    joinRoom();
+    return () => socket.off('connect', joinRoom);
+  }, [session, socket]);
 
   if (loading) {
     return (
@@ -74,10 +66,10 @@ const PatientWaitingRoom = () => {
     return (
       <main className="waiting-room waiting-centered">
         <Video size={34} />
-        <h1>Consultation session not found</h1>
-        <button type="button" onClick={() => navigate('/patient-dashboard')}>
-          <ArrowLeft size={18} />
-          Back to dashboard
+        <h1>{requestError ? 'Unable to load consultation' : 'Consultation session not found'}</h1>
+        <p>{requestError?.status === 403 ? 'You are not authorized to view this consultation.' : requestError?.message || 'The consultation may not be ready yet.'}</p>
+        <button type="button" onClick={() => requestError ? setRetryKey((value) => value + 1) : navigate('/patient-dashboard')}>
+          {requestError ? 'Try again' : <><ArrowLeft size={18} /> Back to dashboard</>}
         </button>
       </main>
     );

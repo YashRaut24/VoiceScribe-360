@@ -7,9 +7,10 @@ const JWT_SECRET = process.env.JWT_SECRET;
 let io;
 
 function initializeSocket(server){
+    const allowedOrigin = process.env.ALLOWED_ORIGIN || 'http://localhost:5173';
     io = new Server(server, {
         cors: {
-            origin: 'http://localhost:5173',
+            origin: allowedOrigin,
             methods: ['GET', 'POST']
         }
     });
@@ -20,7 +21,8 @@ function initializeSocket(server){
                 return next(new Error('JWT_SECRET is not configured'));
             }
 
-            const token = socket.handshake.auth?.token?.replace(/^Bearer\s+/i, '');
+            const cookieToken = socket.handshake.headers.cookie?.match(/(?:^|;\s*)accessToken=([^;]+)/)?.[1];
+            const token = socket.handshake.auth?.token?.replace(/^Bearer\s+/i, '') || cookieToken;
             if (!token) {
                 return next(new Error('Authentication required'));
             }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { createElement, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Activity,
@@ -433,7 +433,7 @@ const DoctorDashboard = () => {
   };
 
   const unreadCount = notifications.filter((notification) => !notification.isRead).length;
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const doctorName = user?.firstName ? `Dr. ${user.firstName}` : 'Doctor';
   const greeting = today.getHours() < 12 ? 'Good morning' : today.getHours() < 17 ? 'Good afternoon' : 'Good evening';
 
@@ -599,7 +599,7 @@ const DoctorDashboard = () => {
               type="button"
               onClick={() => setActiveTab(id)}
             >
-              <Icon size={18} />
+              {createElement(Icon, { size: 18 })}
               {label}
             </button>
           ))}
@@ -611,7 +611,7 @@ const DoctorDashboard = () => {
               {clinicalStats.map(({ label, value, detail, icon: Icon }) => (
                 <article className="clinical-stat" key={label}>
                   <div className="stat-icon">
-                    <Icon size={20} />
+                    {createElement(Icon, { size: 20 })}
                   </div>
                   <div>
                     <span>{label}</span>

@@ -6,7 +6,7 @@ const registerSchema = Joi.object({
     firstName: Joi.string().trim().min(2).max(50).required(),
     lastName:Joi.string().trim().min(2).max(50).required(),
     phone:Joi.string().pattern(/^(\+\d{1,3})?[0-9]{10}$/).required(),
-    userType: Joi.string().trim().lowercase().required().valid('doctor','patient','admin'),
+    userType: Joi.string().trim().lowercase().required().valid('doctor','patient'),
     specialization: Joi.when('userType', {
     is: 'doctor',
     then: Joi.string().trim().min(2).max(100).required(),
@@ -30,7 +30,7 @@ const loginSchema = Joi.object({
 
     password: Joi.string().required(),
 
-    userType: Joi.string().trim().lowercase().valid('doctor', 'patient', 'admin').required()
+    userType: Joi.string().trim().lowercase().valid('doctor', 'patient').required()
 });
 
 module.exports = {
